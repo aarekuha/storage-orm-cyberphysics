@@ -14,11 +14,12 @@ class TestModel(Item):
     class Meta:
         table = "subsystem.{subsystem_id}.tag.{tag_id}"
 
-
-orm = RedisORM(redis_client=redis.Redis(host="localhost", port=8379))
+redis_client = redis.Redis(host="localhost", port=8379)
+orm = RedisORM(redis_client=redis_client)
 
 test_model = TestModel(value=1, date_time=100, subsystem_id=10, tag_id=55)
 test_model2 = TestModel(value=2, date_time=200, subsystem_id=20, tag_id=110)
-# orm.bulk_create([test_model, test_model2])
-orm.select(TestModel).where(TestModel.subsystem_id == 5)
-# print(test_model.params)
+# print(orm.save(test_model))
+# print(orm.bulk_create([test_model, test_model2]))
+# print(f"{TestModel.using(redis_client).get(tag_id=110)}")
+print(f"{TestModel.get(tag_id=110)}")

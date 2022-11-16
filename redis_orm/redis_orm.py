@@ -1,21 +1,21 @@
 import redis
 import logging
-from typing import Any
-from typing import Union
 
 from .item import Item
-from .expression import Expression
 from .operation_result import OperationResult
 from .operation_result import OperationStatus
 
 
 class RedisORM:
+    """ Работа с БД Redis через объектное представление """
     _pipe: redis.client.Pipeline
     _client: redis.Redis
 
     def __init__(self, redis_client: redis.Redis) -> None:
         self._client = redis_client
         self._pipe = redis_client.pipeline()
+        if not Item._db_instance:
+            Item._set_global_instance(db_instance=redis_client)
 
     def save(self, item: Item) -> OperationResult:
         """ Одиночная вставка """
@@ -26,7 +26,7 @@ class RedisORM:
             logging.exception(exception)
             return OperationResult(
                 status=OperationStatus.failed,
-                message=str(exception)
+                message=str(exception),
             )
 
     def bulk_create(self, items: list[Item]) -> OperationResult:
@@ -40,13 +40,5 @@ class RedisORM:
             logging.exception(exception)
             return OperationResult(
                 status=OperationStatus.failed,
-                message=str(exception)
+                message=str(exception),
             )
-
-    def select(self, item_type):
-        self._item_type = item_type
-        return self
-
-    def where(self, *expressions: Union[Any, Expression]):
-        self._where_cause = expressions
-        return self
