@@ -16,5 +16,10 @@ class OperationResult:
         self.status = OperationStatus(status)
         self.message = message
 
+    @property
+    def ok(self) -> bool:
+        return self.status == OperationStatus.success
+
     def __str__(self) -> str:
-        return f"{self.__class__.__name__}: status={self.status}, message={self.message}"
+        message: str = f", message={self.message}" if self.message else ""
+        return f"{self.__class__.__name__}: status={self.status}{message}"
