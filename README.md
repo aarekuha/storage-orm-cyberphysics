@@ -1,8 +1,8 @@
 #### StorageORM (CyberPhysics)
 ##### Установка
-    ```bash
-        pip install storage-orm
-    ```
+```bash
+    pip install storage-orm
+```
 ##### Зависимости
 - [redis-py](https://github.com/redis/redis-py)
 ##### Базовый пример использования ([все примеры](examples/), [базовый пример](examples/redis_1_single.py))
