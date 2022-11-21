@@ -80,12 +80,15 @@ class RedisItem(StorageItem):
         for table in tables:
             # Отбор полей с префиксом текущей table
             fields_src: list[bytes] = list(filter(lambda item: str(item).startswith(table), items))
-            fields: dict[str, bytes] = {}
+            fields: dict[str, Any] = {}
             for field in fields_src:
                 # Формирование атрибутов объекта из присутствующий полей
                 key: str = field.decode().rsplit(".", 1)[1]
                 # Приведение типа к соответствующему полю cls
-                fields[key] = cls.__annotations__[key](items[field])
+                if cls.__annotations__[key] is str:
+                    fields[key] = items[field].decode()
+                else:
+                    fields[key] = cls.__annotations__[key](items[field])
 
             # Формирование Meta из table класса и префикса полученных данных
             table_keys: list[str] = cls._get_keys_from_table(table=cls.Meta.table)
@@ -133,6 +136,12 @@ class RedisItem(StorageItem):
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}({self._table=}, {self._params=})"
+
+    def __eq__(self, other: Type[T]) -> bool:
+        if isinstance(other, self.__class__):
+            return self._params == other._params and self._table == other._table
+
+        return False
 
     def instance_using(self: T, db_instance: redis.Redis = None) -> T:
         """
