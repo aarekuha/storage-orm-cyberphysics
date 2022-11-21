@@ -7,7 +7,7 @@ from setuptools import setup
 :copyright: (c) 2022 aarekuha
 """
 
-version = '1.1.1'
+version = '1.1.2'
 
 with open('README.md', encoding='utf-8') as f:
     long_description = f.read()
