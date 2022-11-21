@@ -34,5 +34,5 @@ result_of_operation: OperationResult = orm.bulk_create(items=example_items)
 print(result_of_operation)
 
 # Получение записей
-getted_items: list[ExampleItem] = ExampleItem.get(subsystem_id=1)
+getted_items: list[ExampleItem] = ExampleItem.filter(subsystem_id=1)
 print(f"{getted_items=}")

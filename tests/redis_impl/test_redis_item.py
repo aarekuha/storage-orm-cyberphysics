@@ -3,6 +3,8 @@ import redis
 from pytest import MonkeyPatch
 
 from storage_orm import RedisItem
+from storage_orm import MoreThanOneFoundException
+from storage_orm import NotFoundException
 
 from .mocked_redis import MockedRedis
 
@@ -58,22 +60,22 @@ def test_new_item_redis_model(test_item: RedisItem, test_input_dict: dict[str, s
         assert test_item.__dict__[key] == test_input_dict[key]
 
 
-def test_get_not_instance(test_item: RedisItem, test_input_dict: dict[str, str]) -> None:
+def test_filter_not_instance(test_item: RedisItem, test_input_dict: dict[str, str]) -> None:
     """ Осмысленное исключение, при отсутствии инициированного подключения к БД """
     with pytest.raises(Exception) as exception:
         any_dict_key: str = next(iter(test_input_dict))
-        test_item.get(**{any_dict_key: test_input_dict[any_dict_key]})
+        test_item.filter(**{any_dict_key: test_input_dict[any_dict_key]})
 
     assert "not connected" in str(exception.value)
 
 
-def test_get_oom_exclude(test_item: RedisItem, monkeypatch: MonkeyPatch) -> None:
+def test_filter_oom_exclude(test_item: RedisItem, monkeypatch: MonkeyPatch) -> None:
     """ Для исключения ООМ должна быть проверка на запрос данных без фильтра """
     with monkeypatch.context() as patch:
         # Установить фейковое подключение, чтобы пройти проверку на его отсутствие
         patch.setattr(RedisItem, "_db_instance", redis.Redis)
         with pytest.raises(Exception) as exception:
-            test_item.get()
+            test_item.filter()
 
     assert "empty filter" in str(exception.value)
 
@@ -183,3 +185,17 @@ def test_objects_from_db_items(
                 if key.startswith("attr")
     }
     assert test_item._objects_from_db_items(items=test_data) == [expected_item,]
+
+
+def test_get_not_found_items(monkeypatch: MonkeyPatch) -> None:
+    """ Выброс исключения, во время использования метода get(), когда не найдено ни одной записи """
+    with monkeypatch.context() as patch, pytest.raises(NotFoundException):
+        patch.setattr(RedisItem, "filter", lambda **_: list())
+        RedisItem.get(not_defined_parameter="any_value")
+
+
+def test_get_multiple_items_found(monkeypatch: MonkeyPatch) -> None:
+    """ Выброс исключения, во время использования метода get(), когда найдено несколько записей """
+    with monkeypatch.context() as patch, pytest.raises(MoreThanOneFoundException):
+        patch.setattr(RedisItem, "filter", lambda **_: ["1", "2"])
+        RedisItem.get(not_defined_parameter="any_value")

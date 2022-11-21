@@ -13,6 +13,9 @@ from ..storage_item import StorageItem
 from ..operation_result import OperationResult
 from ..operation_result import OperationStatus
 
+from ..exceptions import NotFoundException
+from ..exceptions import MoreThanOneFoundException
+
 # Redis: переопределения типов для корректной работы линтеров
 _Value = Union[bytes, float, int, str]
 _Key = Union[str, bytes]
@@ -55,7 +58,22 @@ class RedisItem(StorageItem):
         cls._db_instance = db_instance
 
     @classmethod
-    def get(cls: Type[T], **kwargs) -> list[T]:
+    def get(cls: Type[T], **kwargs) -> T:
+        """
+            Получение одного объекта по выбранному фильтру
+
+                StorageItem.get(subsystem_id=10, tag_id=55)
+        """
+        result_list: list[T] = cls.filter(kwargs=kwargs)
+        if not result_list:
+            raise NotFoundException(f"{T} item not found...")
+        if len(result_list) > 1:
+            raise MoreThanOneFoundException(f"{T} multiple items found...")
+
+        return result_list[0]
+
+    @classmethod
+    def filter(cls: Type[T], **kwargs) -> list[T]:
         """
             Получение объектов по фильтру переданных аргументов, например:
 
@@ -90,7 +108,7 @@ class RedisItem(StorageItem):
             fields_src: list[bytes] = list(filter(lambda item: str(item).startswith(table), items))
             fields: dict[str, Any] = {}
             for field in fields_src:
-                # Формирование атрибутов объекта из присутствующий полей
+                # Формирование атрибутов объекта из присутствующих полей
                 key: str = field.decode().rsplit(".", 1)[1]
                 # Приведение типа к соответствующему полю cls
                 if cls.__annotations__[key] is str:
@@ -114,7 +132,7 @@ class RedisItem(StorageItem):
         table: str = cls.Meta.table
         # Шаблон для поиска аргументов, которе не были переданы
         patterns: list[str] = re.findall(r'\{[^\}]*\}', table)
-        # Замена аргументов, которые не переданы на звездочку
+        # Замена аргументов, которые не переданы, на звездочку
         for pattern in patterns:
             clean_key: str = pattern.strip("{").strip("}")
             if not clean_key in kwargs:
