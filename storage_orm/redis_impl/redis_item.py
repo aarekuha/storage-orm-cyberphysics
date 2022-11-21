@@ -23,13 +23,21 @@ T = TypeVar('T', bound='RedisItem')
 
 class RedisItem(StorageItem):
     _table: str
+    _table_keys: dict[str, int]
     _params: Mapping[_Key, _Value]
     _db_instance: redis.Redis | None = None
 
     class Meta:
         table = ""  # Pattern имени записи, например, "subsystem.{subsystem_id}.tag.{tag_id}"
 
-    def __init__(self, **kwargs):
+    def __init_subclass__(cls) -> None:
+        cls._table_keys = {
+            index.replace("{", "").replace("}", ""): key
+                for key, index in enumerate(cls.Meta.table.split("."))
+                    if index.startswith("{") and index.endswith("}")
+        }
+
+    def __init__(self, **kwargs) -> None:
         # Формирование полей модели из переданных дочернему классу аргументов
         [self.__dict__.__setitem__(key, value) for key, value in kwargs.items()]
         # Формирование изолированной среды с данными класса для дальнейшей работы с БД
@@ -91,9 +99,10 @@ class RedisItem(StorageItem):
                     fields[key] = cls.__annotations__[key](items[field])
 
             # Формирование Meta из table класса и префикса полученных данных
-            table_keys: list[str] = cls._get_keys_from_table(table=cls.Meta.table)
-            table_values: list[str] = cls._get_keys_from_table(table=table)
-            table_args: dict = dict(zip(table_keys, table_values))
+            table_args: dict = {}
+            src_values: list[str] = table.split('.')
+            for key, position in cls._table_keys.items():
+                table_args[key] = src_values[position]
 
             result_items.append(cls(**(fields | table_args)))
 
@@ -114,28 +123,13 @@ class RedisItem(StorageItem):
         filter_string: str = table.format(**kwargs) + ".*"
         return filter_string
 
-    @staticmethod
-    def _get_keys_from_table(table: str) -> list[str]:
-        """
-            Сбор данных на "ключевых" позициях table
-            Например,
-                table = "subsystem.{subsystem_id}.tag.{tag_id}"
-                                         ^                ^
-                table = "subsystem.10.tag.55"
-                                    ^      ^
-        """
-        table_keys: list[str] = []
-        for key in table.split(".")[::-2]:
-            table_keys.append(key.strip("{").strip("}"))
-        return table_keys
-
     @property
     def mapping(self) -> Mapping[_Key, _Value]:
         """ Формирование ключей и значений для БД """
         return {".".join([self._table, str(key)]): value for key, value in self._params.items()}
 
     def __repr__(self) -> str:
-        return f"{self.__class__.__name__}({self._table=}, {self._params=})"
+        return f"{self.__class__.__name__}({self._table=}, {self._table_keys=}, {self._params=})"
 
     def __eq__(self, other: Type[T]) -> bool:
         if isinstance(other, self.__class__):

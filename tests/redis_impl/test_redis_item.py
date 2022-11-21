@@ -78,21 +78,6 @@ def test_get_oom_exclude(test_item: RedisItem, monkeypatch: MonkeyPatch) -> None
     assert "empty filter" in str(exception.value)
 
 
-def test_get_keys_from_table(test_item: RedisItem) -> None:
-    """ Проверка на формирование ключей-атрибутов из строки table """
-    table_example: str = "param1.param_value_1.param2.param_value_2"
-    # Ожидаем                          ^                    ^
-    expected_dict: list[str] = ["param_value_1", "param_value_2"]
-    func_result: list[str] = test_item._get_keys_from_table(table=table_example)
-    assert sorted(func_result) == sorted(expected_dict)
-
-    table_example: str = "param1.50.param2.15"
-    # Ожидаем                     ^         ^
-    expected_dict: list[str] = ["50", "15"]
-    func_result: list[str] = test_item._get_keys_from_table(table=table_example)
-    assert sorted(func_result) == sorted(expected_dict)
-
-
 def test_get_filter_by_kwargs_all(
     test_item: RedisItem,
     test_input_dict: dict,
