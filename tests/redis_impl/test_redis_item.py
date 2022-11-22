@@ -199,3 +199,16 @@ def test_get_multiple_items_found(monkeypatch: MonkeyPatch) -> None:
     with monkeypatch.context() as patch, pytest.raises(MoreThanOneFoundException):
         patch.setattr(RedisItem, "filter", lambda **_: ["1", "2"])
         RedisItem.get(not_defined_parameter="any_value")
+
+
+@pytest.mark.parametrize(
+    "input_kwargs, expected_kwargs", [
+        ({"param1": "1", "param2": "2"}, {"param1": "1", "param2": "2"}),
+        ({"param1__in": [1, 2], "param2": "2"}, {"param1": "[12]", "param2": "2"}),
+        ({"param1__in": [1, 2], "param2__in": [3, 4]}, {"param1": "[12]", "param2": "[34]"}),
+        ({"param1": "6", "param2__in": [3, 4]}, {"param1": "6", "param2": "[34]"}),
+    ],
+)
+def test_get_fixed_kwargs(input_kwargs: dict, expected_kwargs: dict) -> None:
+    """ Формирование элементов для использования в паттерне поиска """
+    assert RedisItem._get_fixed_kwargs(kwargs=input_kwargs) == expected_kwargs

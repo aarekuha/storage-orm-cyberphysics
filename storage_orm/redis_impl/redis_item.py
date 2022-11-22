@@ -84,15 +84,8 @@ class RedisItem(StorageItem):
         if not len(kwargs):
             raise Exception(f"{cls.__name__}.get() has empty filter. OOM possible.")
         # Выборка ключей из базы по подготовленному паттерну и формирование результата
-        keys: list[bytes]
-        cursor, keys = cls._db_instance.scan(match=cls._get_filter_by_kwargs(kwargs=kwargs))
-        # Выбор ключей до истощения курсора (выборка производится постранично)
-        while cursor:
-            cursor, more_keys = cls._db_instance.scan(
-                cursor=cursor,
-                match=cls._get_filter_by_kwargs(kwargs=kwargs)
-            )
-            keys += more_keys
+        filter: str = cls._get_filter_by_kwargs(kwargs=kwargs)
+        keys: list[bytes] = cls._db_instance.keys(pattern=filter)
         values: list[bytes] = cast(list[bytes], cls._db_instance.mget(keys))
         result: list[T] = cls._objects_from_db_items(items=dict(zip(keys, values)))
         return result
@@ -126,19 +119,41 @@ class RedisItem(StorageItem):
 
         return result_items
 
+    @staticmethod
+    def _get_fixed_kwargs(kwargs: dict) -> dict:
+        """
+            Преобразование ключей в имена полей и подготовка аргументов
+                - если передан список/сет/кортеж, его значения необходимо
+                  привести к правильному шаблону
+        """
+        fixed_kwargs: dict = {}
+        for key, value in kwargs.items():
+            if key.endswith("__in"):
+                new_value: str
+                if type(value) in [list, tuple, set]:
+                    new_value = "[" + "".join(str(v) for v in value) + "]"
+                else:
+                    new_value = value
+                fixed_kwargs[key.strip("__in")] = str(new_value)
+            else:
+                fixed_kwargs[key] = value
+
+        return fixed_kwargs
+
     @classmethod
     def _get_filter_by_kwargs(cls: Type[T], kwargs: dict) -> str:
-        # Подготовка паттерна поиска
+        """ Подготовка паттерна поиска """
         table: str = cls.Meta.table
         # Шаблон для поиска аргументов, которе не были переданы
         patterns: list[str] = re.findall(r'\{[^\}]*\}', table)
         # Замена аргументов, которые не переданы, на звездочку
+        fixed_kwargs: dict = cls._get_fixed_kwargs(kwargs=kwargs)
         for pattern in patterns:
             clean_key: str = pattern.strip("{").strip("}")
-            if not clean_key in kwargs:
+            if not clean_key in fixed_kwargs:
                 table = table.replace(pattern, "*")
         # Заполнение паттерна поиска
-        filter_string: str = table.format(**kwargs) + ".*"
+        filter_string: str = table.format(**fixed_kwargs) + ".*"
         return filter_string
 
     @property
