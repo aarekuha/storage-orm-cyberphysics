@@ -26,7 +26,7 @@ print(result_of_operation)
 
 # Получение одной записи
 try:
-    getted_item: ExampleItem = ExampleItem.get(subsystem_id__in=3, tag_id=15)
+    getted_item: ExampleItem = ExampleItem.get(subsystem_id=3, tag_id=15)
     print(f"{getted_item=}")
 except MoreThanOneFoundException:
     print("Найдено больше одной записи")
