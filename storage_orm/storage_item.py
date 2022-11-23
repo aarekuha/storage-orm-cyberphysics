@@ -18,11 +18,22 @@ class StorageItem(metaclass=abc.ABCMeta):
     """
 
     @abc.abstractclassmethod
-    def get(cls, **kwargs) -> list[StorageItem]:
+    def get(cls, _item: StorageItem = None, **kwargs) -> StorageItem:
         """
             Получение объектов по фильтру переданных аргументов, например:
 
                 StorageItem.get(subsystem_id=10, tag_id=55)
+                StorageItem.get(_item=StorageItem(subsystem_id=10))
+        """
+        raise NotImplementedError
+
+    @abc.abstractclassmethod
+    def filter(cls, _items: list[StorageItem] = None, **kwargs) -> list[StorageItem]:
+        """
+            Получение объектов по фильтру переданных аргументов, например:
+
+                StorageItem.filter(subsystem_id=10, tag_id=55)
+                StorageItem.filter(_items=[StorageItem(subsystem_id=10), ...])
         """
         raise NotImplementedError
 
