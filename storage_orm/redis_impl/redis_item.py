@@ -95,21 +95,31 @@ class RedisItem(StorageItem):
         """
         if not cls._db_instance:
             raise Exception("Redis database not connected...")
-        # Разобрать готовым методом аргуметы в список фильтров
-        filters_list: list[str] = cls._get_filters_by_kwargs(**kwargs)
-        if len(filters_list) > 1:
-            raise MultipleGetParamsException(
-                f"{cls.__name__} invalid (uses __in) params to get method..."
-            )
-        filter: str = filters_list[0]
-        # Использование маски для выборки одного объекта не предусмотрено
-        if "*" in filter.rstrip("*") or not filter.rstrip(".*"):
-            raise NotEnoughParamsException(
-                f"{cls.__name__} not enough params to get method..."
-            )
+        if len(kwargs) and _item:
+            raise Exception(f"{cls.__name__}.get() has _item and kwargs. It's not possible.")
+        filter: str
+        if _item:
+            filter = _item._table + ".*"
+        else:
+            # Разобрать готовым методом аргуметы в список фильтров
+            filters_list: list[str] = cls._get_filters_by_kwargs(**kwargs)
+            if len(filters_list) > 1:
+                raise MultipleGetParamsException(
+                    f"{cls.__name__} invalid (uses __in) params to get method..."
+                )
+            filter = filters_list[0]
+            # Использование маски для выборки одного объекта не предусмотрено
+            if "*" in filter.rstrip("*") or not filter.rstrip(".*"):
+                raise NotEnoughParamsException(
+                    f"{cls.__name__} not enough params to get method..."
+                )
         keys: list[bytes] = cls._db_instance.keys(pattern=filter)
         values: list[bytes] = cast(list[bytes], cls._db_instance.mget(keys))
-        result: Union[T, None] = cls._objects_from_db_items(items=dict(zip(keys, values)))[0]
+        finded_objects: list[T] = cls._objects_from_db_items(items=dict(zip(keys, values)))
+        if not finded_objects:
+            return None
+
+        result: Union[T, None] = finded_objects[0]
         return result
 
     @classmethod
@@ -126,8 +136,13 @@ class RedisItem(StorageItem):
             raise Exception(f"{cls.__name__}.filter() has empty filter. OOM possible.")
         if len(kwargs) and _items:
             raise Exception(f"{cls.__name__}.filter() has _items and kwargs. It's not possible.")
-        # Формирование списка фильтров для возможности поиска входящих в список
-        filters_list: list[str] = cls._get_filters_by_kwargs(**kwargs)
+        filters_list: list[str]
+        if _items:
+            filters_list = [item._table + ".*" for item in _items]
+        else:
+            # Формирование списка фильтров для возможности поиска входящих в список
+            filters_list = cls._get_filters_by_kwargs(**kwargs)
+
         result: list[T] = []
         for filter in filters_list:
             keys: list[bytes] = cls._db_instance.keys(pattern=filter)
