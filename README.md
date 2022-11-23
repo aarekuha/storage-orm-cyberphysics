@@ -1,4 +1,6 @@
 #### StorageORM (CyberPhysics)
+[![Upload pypi](https://github.com/CyberPhysics-Platform/storage-orm/actions/workflows/pypi_deploy.yml/badge.svg)](https://github.com/CyberPhysics-Platform/storage-orm/actions/workflows/pypi_deploy.yml)
+[![Linting & Pytest](https://github.com/CyberPhysics-Platform/storage-orm/actions/workflows/lint_and_test.yml/badge.svg)](https://github.com/CyberPhysics-Platform/storage-orm/actions/workflows/lint_and_test.yml)
 ##### Установка
 ```bash
     pip install storage-orm
