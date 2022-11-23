@@ -1,3 +1,4 @@
+import subprocess
 from io import open
 from setuptools import setup
 
@@ -7,7 +8,7 @@ from setuptools import setup
 :copyright: (c) 2022 aarekuha
 """
 
-version = '1.1.3'
+version = subprocess.run(['git', 'describe', '--tags'], stdout=subprocess.PIPE).stdout.decode().strip()
 
 with open('README.md', encoding='utf-8') as f:
     long_description = f.read()
@@ -32,6 +33,8 @@ setup(
 
     packages=['storage_orm', 'storage_orm.redis_impl'],
     install_requires=['redis'],
+
+    python_requires='>=3.9',
 
     classifiers=[
         'License :: OSI Approved :: Apache Software License',
