@@ -29,7 +29,7 @@ KEYS_DELIMITER = "."
 
 class RedisItem(StorageItem):
     _table: str
-    _table_keys: dict[str, int]
+    _keys_positions: dict[str, int]
     _params: Mapping[_Key, _Value]
     _db_instance: Union[redis.Redis, None] = None
 
@@ -37,7 +37,7 @@ class RedisItem(StorageItem):
         table = ""  # Pattern имени записи, например, "subsystem.{subsystem_id}.tag.{tag_id}"
 
     def __init_subclass__(cls) -> None:
-        cls._table_keys = {
+        cls._keys_positions = {
             index.replace("{", "").replace("}", ""): key
                 for key, index in enumerate(cls.Meta.table.split(KEYS_DELIMITER))
                     if index.startswith("{") and index.endswith("}")
@@ -51,7 +51,7 @@ class RedisItem(StorageItem):
         """
         result_kwargs: dict = {}
         for obj in objects:
-            for key, position in obj._table_keys.items():
+            for key, position in obj._keys_positions.items():
                 value: str = obj._table.split(KEYS_DELIMITER)[position]
                 if key in result_kwargs:
                     result_kwargs[key] += str(value)
@@ -91,8 +91,9 @@ class RedisItem(StorageItem):
             Получение одного объекта по выбранному фильтру
 
                 StorageItem.get(subsystem_id=10, tag_id=55)
+                StorageItem.get(_item=StorageItem(subsystem_id=10))
         """
-        result_list: list[T] = cls.filter(_items=_items, kwargs=kwargs)
+        result_list: list[T] = cls.filter(_items=_items, **kwargs)
         if not result_list:
             raise NotFoundException(f"{T} item not found...")
         if len(result_list) > 1:
@@ -105,15 +106,17 @@ class RedisItem(StorageItem):
         """
             Получение объектов по фильтру переданных аргументов, например:
 
-                StorageItem.get(subsystem_id=10, tag_id=55)
-                StorageItem.get(subsystem_id__in=[10, 47], tag_id=55)
+                StorageItem.filter(subsystem_id=10, tag_id=55)
+                StorageItem.filter(_items=[StorageItem(subsystem_id=10), ...])
         """
         if not cls._db_instance:
             raise Exception("Redis database not connected...")
         if not len(kwargs) and not _items:
-            raise Exception(f"{cls.__name__}.get() has empty filter. OOM possible.")
+            raise Exception(f"{cls.__name__}.filter() has empty filter. OOM possible.")
+        if len(kwargs) and _items:
+            raise Exception(f"{cls.__name__}.filter() has _items and kwargs. It's not possible.")
         # Формирование списка фильтров для возможности поиска входящих в список
-        filters_list: list[str] = cls._get_filters_by_kwargs(kwargs=kwargs)
+        filters_list: list[str] = cls._get_filters_by_kwargs(**kwargs)
         result: list[T] = []
         for filter in filters_list:
             keys: list[bytes] = cls._db_instance.keys(pattern=filter)
@@ -150,7 +153,7 @@ class RedisItem(StorageItem):
             # Формирование Meta из table класса и префикса полученных данных
             table_args: dict = {}
             src_values: list[str] = table.split('.')
-            for key, position in cls._table_keys.items():
+            for key, position in cls._keys_positions.items():
                 table_args[key] = src_values[position]
 
             result_items.append(cls(**(fields | table_args)))
@@ -158,7 +161,7 @@ class RedisItem(StorageItem):
         return result_items
 
     @staticmethod
-    def _get_list_of_prepared_kwargs(kwargs: dict) -> list[dict]:
+    def _get_list_of_prepared_kwargs(**kwargs: dict) -> list[dict]:
         """
             Подготовка списка фильтров из словарей:
                 - исходный словарь разделить:
@@ -187,17 +190,18 @@ class RedisItem(StorageItem):
             result_kwargs = [mixed_item | basic_kwargs for mixed_item in mixed_kwargs]
         else:
             result_kwargs = [basic_kwargs]
+
         return result_kwargs
 
     @classmethod
-    def _get_filters_by_kwargs(cls: Type[T], kwargs: dict) -> list[str]:
+    def _get_filters_by_kwargs(cls: Type[T], **kwargs: dict) -> list[str]:
         """ Подготовка списка паттернов поиска """
         table: str = cls.Meta.table
         # Шаблон для поиска аргументов, которе не были переданы
         patterns: list[str] = re.findall(r'\{[^\}]*\}', table)
         str_filters: list[str] = []
         # Получение сырого списка фильтров
-        prepared_kwargs_list: list[dict] = cls._get_list_of_prepared_kwargs(kwargs=kwargs)
+        prepared_kwargs_list: list[dict] = cls._get_list_of_prepared_kwargs(**kwargs)
         # Замена аргументов, которые не переданы, на звездочку
         for prepared_kwargs in prepared_kwargs_list:
             for pattern in patterns:
@@ -220,7 +224,7 @@ class RedisItem(StorageItem):
     def __repr__(self) -> str:
         return (
             f"{self.__class__.__name__}({self._table=}, "
-            f"{self._table_keys=}, {self._params=})"
+            f"{self._keys_positions=}, {self._params=})"
         )
 
     def __eq__(self, other: Type[T]) -> bool:
