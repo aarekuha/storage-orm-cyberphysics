@@ -2,3 +2,4 @@ venv/
 dist/
 storage_orm.egg-info/
 **/__pycache__/
+test.py
