@@ -2,8 +2,6 @@ from storage_orm import StorageORM
 from storage_orm import RedisORM
 from storage_orm import RedisItem
 from storage_orm import OperationResult
-from storage_orm import NotFoundException
-from storage_orm import MoreThanOneFoundException
 
 
 class ExampleItem(RedisItem):

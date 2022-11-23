@@ -20,7 +20,7 @@ class StorageItem(metaclass=abc.ABCMeta):
     @abc.abstractclassmethod
     def get(cls, _item: StorageItem = None, **kwargs) -> StorageItem:
         """
-            Получение объектов по фильтру переданных аргументов, например:
+            Получение одного объекта по выбранному фильтру
 
                 StorageItem.get(subsystem_id=10, tag_id=55)
                 StorageItem.get(_item=StorageItem(subsystem_id=10))

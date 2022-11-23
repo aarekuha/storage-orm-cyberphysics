@@ -1,4 +1,6 @@
 import redis
+from typing import Union
+
 from storage_orm import RedisItem
 from storage_orm import OperationResult
 from storage_orm import NotFoundException
@@ -32,7 +34,7 @@ result_of_operation: OperationResult = example_item.using(db_instance=redis_2).s
 
 """ Получение записей """
 try:
-    item_from_redis_1: ExampleItem = ExampleItem.using(db_instance=redis_1).get(subsystem_id=3, tag_id=15)
+    item_from_redis_1: Union[ExampleItem, None] = ExampleItem.using(db_instance=redis_1).get(subsystem_id=3, tag_id=15)
     print(f"{item_from_redis_1=}")
 except MoreThanOneFoundException:
     print("Найдено больше одной записи")

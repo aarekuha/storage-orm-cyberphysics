@@ -16,6 +16,8 @@ from ..operation_result import OperationStatus
 
 from ..exceptions import NotFoundException
 from ..exceptions import MoreThanOneFoundException
+from ..exceptions import MultipleGetParamsException
+from ..exceptions import NotEnoughParamsException
 
 # Redis: переопределения типов для корректной работы линтеров
 _Value = Union[bytes, float, int, str]
@@ -61,8 +63,6 @@ class RedisItem(StorageItem):
         for key in result_kwargs.keys():
             result_kwargs[key] = f"[{result_kwargs[key]}]"
 
-        print(f"{result_kwargs=}")
-
         return result_kwargs
 
     def __init__(self, **kwargs) -> None:
@@ -86,20 +86,31 @@ class RedisItem(StorageItem):
         cls._db_instance = db_instance
 
     @classmethod
-    def get(cls: Type[T], _items: list[T] = None, **kwargs) -> T:
+    def get(cls: Type[T], _item: T = None, **kwargs) -> Union[T, None]:
         """
             Получение одного объекта по выбранному фильтру
 
                 StorageItem.get(subsystem_id=10, tag_id=55)
                 StorageItem.get(_item=StorageItem(subsystem_id=10))
         """
-        result_list: list[T] = cls.filter(_items=_items, **kwargs)
-        if not result_list:
-            raise NotFoundException(f"{T} item not found...")
-        if len(result_list) > 1:
-            raise MoreThanOneFoundException(f"{T} multiple items found...")
-
-        return result_list[0]
+        if not cls._db_instance:
+            raise Exception("Redis database not connected...")
+        # Разобрать готовым методом аргуметы в список фильтров
+        filters_list: list[str] = cls._get_filters_by_kwargs(**kwargs)
+        if len(filters_list) > 1:
+            raise MultipleGetParamsException(
+                f"{cls.__name__} invalid (uses __in) params to get method..."
+            )
+        filter: str = filters_list[0]
+        # Использование маски для выборки одного объекта не предусмотрено
+        if "*" in filter.rstrip("*") or not filter.rstrip(".*"):
+            raise NotEnoughParamsException(
+                f"{cls.__name__} not enough params to get method..."
+            )
+        keys: list[bytes] = cls._db_instance.keys(pattern=filter)
+        values: list[bytes] = cast(list[bytes], cls._db_instance.mget(keys))
+        result: Union[T, None] = cls._objects_from_db_items(items=dict(zip(keys, values)))[0]
+        return result
 
     @classmethod
     def filter(cls: Type[T], _items: list[T] = None, **kwargs) -> list[T]:

@@ -9,3 +9,5 @@ from .operation_result import OperationStatus
 
 from .exceptions import NotFoundException
 from .exceptions import MoreThanOneFoundException
+from .exceptions import NotEnoughParamsException
+from .exceptions import MultipleGetParamsException

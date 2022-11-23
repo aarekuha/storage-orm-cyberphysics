@@ -1,3 +1,5 @@
+from typing import Union
+
 from storage_orm import StorageORM
 from storage_orm import RedisORM
 from storage_orm import RedisItem
@@ -26,7 +28,7 @@ print(result_of_operation)
 
 # Получение одной записи
 try:
-    getted_item: ExampleItem = ExampleItem.get(subsystem_id=3, tag_id=15)
+    getted_item: Union[ExampleItem, None] = ExampleItem.get(subsystem_id=3, tag_id=15)
     print(f"{getted_item=}")
 except MoreThanOneFoundException:
     print("Найдено больше одной записи")

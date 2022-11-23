@@ -4,8 +4,8 @@ from pytest import MonkeyPatch
 from typing import Union
 
 from storage_orm import RedisItem
-from storage_orm import MoreThanOneFoundException
-from storage_orm import NotFoundException
+from storage_orm import MultipleGetParamsException
+from storage_orm import NotEnoughParamsException
 
 from .mocked_redis import MockedRedis
 
@@ -88,7 +88,7 @@ def test_get_filters_by_kwargs_all(
     """ Проверка формирования фильтра для таблицы """
     expected_prefix: str = _get_prefix(src_dict=test_input_dict)
     expected_filters_list: list[str] = [f"{expected_prefix}.*"]
-    assert test_item._get_filters_by_kwargs(kwargs=test_input_dict) == expected_filters_list
+    assert test_item._get_filters_by_kwargs(**test_input_dict) == expected_filters_list
 
 
 @pytest.mark.parametrize("param_key", ["param1", "param2"])
@@ -114,7 +114,7 @@ def test_get_filters_by_kwargs_one_of_two(
     # Удалить из передаваемых аргументов текущий параметр
     del modified_dict[param_key]
 
-    assert test_item._get_filters_by_kwargs(kwargs=modified_dict) == expected_filters_list
+    assert test_item._get_filters_by_kwargs(**modified_dict) == expected_filters_list
 
 
 def test_mapping(test_item: RedisItem, test_input_dict: dict) -> None:
@@ -187,18 +187,18 @@ def test_objects_from_db_items(
     assert test_item._objects_from_db_items(items=test_data) == [expected_item,]
 
 
-def test_get_not_found_items(monkeypatch: MonkeyPatch) -> None:
+def test_get_multiple_params_exception(monkeypatch: MonkeyPatch) -> None:
     """ Выброс исключения, во время использования метода get(), когда не найдено ни одной записи """
-    with monkeypatch.context() as patch, pytest.raises(NotFoundException):
-        patch.setattr(RedisItem, "filter", lambda **_: list())
-        RedisItem.get(not_defined_parameter="any_value")
+    with monkeypatch.context() as patch, pytest.raises(MultipleGetParamsException):
+        patch.setattr(RedisItem, "_db_instance", redis.Redis)
+        RedisItem.get(subsystem_id__in=[1, 2])
 
 
-def test_get_multiple_items_found(monkeypatch: MonkeyPatch) -> None:
+def test_get_not_enough_params(monkeypatch: MonkeyPatch) -> None:
     """ Выброс исключения, во время использования метода get(), когда найдено несколько записей """
-    with monkeypatch.context() as patch, pytest.raises(MoreThanOneFoundException):
-        patch.setattr(RedisItem, "filter", lambda **_: ["1", "2"])
-        RedisItem.get(not_defined_parameter="any_value")
+    with monkeypatch.context() as patch, pytest.raises(NotEnoughParamsException):
+        patch.setattr(RedisItem, "_db_instance", redis.Redis)
+        RedisItem.get()
 
 
 @pytest.mark.parametrize(
@@ -231,4 +231,4 @@ def test_get_multiple_items_found(monkeypatch: MonkeyPatch) -> None:
 )
 def test_get_list_of_prepared_kwargs(input_kwargs: dict, expected_kwargs: dict) -> None:
     """ Формирование элементов для использования в паттерне поиска """
-    assert RedisItem._get_list_of_prepared_kwargs(kwargs=input_kwargs) == expected_kwargs
+    assert RedisItem._get_list_of_prepared_kwargs(**input_kwargs) == expected_kwargs
