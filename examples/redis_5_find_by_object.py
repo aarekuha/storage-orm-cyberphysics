@@ -19,22 +19,15 @@ class ExampleItem(RedisItem):
 # Во время первого подключения устанавливается глобальное подключение к Redis
 orm: StorageORM = RedisORM(host="localhost", port=8379)
 
-# Создание единичной записи
-example_item: ExampleItem = ExampleItem(subsystem_id=3, tag_id=15, date_time=100, any_value=17.)
-result_of_operation: OperationResult = example_item.save()
-print(result_of_operation)
-
-# Получение одной записи
-try:
-    getted_item: ExampleItem = ExampleItem.get(subsystem_id__in=3, tag_id=15)
-    print(f"{getted_item=}")
-except MoreThanOneFoundException:
-    print("Найдено больше одной записи")
-except NotFoundException:
-    print("Не найдено ни одной записи с переданными параметрами")
-
+# Создание трёх записей с последовательным subsystem_id
+items: list[ExampleItem] = []
+# for i in range(3):
+#     items.append(ExampleItem(subsystem_id=1+i, tag_id=15, date_time=100+i, any_value=17.+i))
+# result_of_operation: OperationResult = orm.bulk_create(items=items)
+# print(result_of_operation)
 
 # Получение всех записей по фильтру
-getted_items: list[ExampleItem] = ExampleItem.filter(subsystem_id=3, tag_id=15)
-print(f"{getted_items=}")
+another_item: ExampleItem = ExampleItem(subsystem_id=1, tag_id=15)
+item_by_object: ExampleItem = ExampleItem.filter(_items=[another_item])
+print(f"{item_by_object=}")
 
