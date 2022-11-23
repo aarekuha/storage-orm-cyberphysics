@@ -1,6 +1,7 @@
 import pytest
 import redis
 from pytest import MonkeyPatch
+from typing import Union
 
 from storage_orm import RedisItem
 from storage_orm import MoreThanOneFoundException
@@ -27,7 +28,7 @@ def test_item(test_input_dict: dict) -> RedisItem:
 
 
 @pytest.fixture
-def test_input_dict() -> dict[str, str | bytes | float | int]:
+def test_input_dict() -> dict[str, Union[str, bytes, float, int]]:
     """ Тестовый словарь """
     return {
         "param1": "param_value_1",
@@ -80,19 +81,18 @@ def test_filter_oom_exclude(test_item: RedisItem, monkeypatch: MonkeyPatch) -> N
     assert "empty filter" in str(exception.value)
 
 
-def test_get_filter_by_kwargs_all(
+def test_get_filters_by_kwargs_all(
     test_item: RedisItem,
     test_input_dict: dict,
 ) -> None:
     """ Проверка формирования фильтра для таблицы """
     expected_prefix: str = _get_prefix(src_dict=test_input_dict)
-    expected_filter: str = f"{expected_prefix}.*"
-
-    assert test_item._get_filter_by_kwargs(kwargs=test_input_dict) == expected_filter
+    expected_filters_list: list[str] = [f"{expected_prefix}.*"]
+    assert test_item._get_filters_by_kwargs(kwargs=test_input_dict) == expected_filters_list
 
 
 @pytest.mark.parametrize("param_key", ["param1", "param2"])
-def test_get_filter_by_kwargs_one_of_two(
+def test_get_filters_by_kwargs_one_of_two(
     test_item: RedisItem,
     test_input_dict: dict,
     param_key: str,  # Исключаемый параметр
@@ -110,11 +110,11 @@ def test_get_filter_by_kwargs_one_of_two(
     # В строке фильтра текущий параметр (param*) должен приобрести значение *
     modified_dict[param_key] = "*"
     expected_prefix: str = _get_prefix(src_dict=modified_dict)
-    expected_filter: str = f"{expected_prefix}.*"
+    expected_filters_list: list[str] = [f"{expected_prefix}.*"]
     # Удалить из передаваемых аргументов текущий параметр
     del modified_dict[param_key]
 
-    assert test_item._get_filter_by_kwargs(kwargs=modified_dict) == expected_filter
+    assert test_item._get_filters_by_kwargs(kwargs=modified_dict) == expected_filters_list
 
 
 def test_mapping(test_item: RedisItem, test_input_dict: dict) -> None:
@@ -203,12 +203,32 @@ def test_get_multiple_items_found(monkeypatch: MonkeyPatch) -> None:
 
 @pytest.mark.parametrize(
     "input_kwargs, expected_kwargs", [
-        ({"param1": "1", "param2": "2"}, {"param1": "1", "param2": "2"}),
-        ({"param1__in": [1, 2], "param2": "2"}, {"param1": "[12]", "param2": "2"}),
-        ({"param1__in": [1, 2], "param2__in": [3, 4]}, {"param1": "[12]", "param2": "[34]"}),
-        ({"param1": "6", "param2__in": [3, 4]}, {"param1": "6", "param2": "[34]"}),
+        ({"param1": "1", "param2": "2"}, [{"param1": "1", "param2": "2"}]),
+        (
+            {"param1__in": [1, 2], "param2": "2"},
+            [
+                {"param1": 1, "param2": "2"},
+                {"param1": 2, "param2": "2"},
+            ],
+        ),
+        (
+            {"param1__in": [1, 2], "param2__in": [3, 4]},
+            [
+                {"param1": 1, "param2": 3},
+                {"param1": 1, "param2": 4},
+                {"param1": 2, "param2": 3},
+                {"param1": 2, "param2": 4},
+            ],
+        ),
+        (
+            {"param1": "6", "param2__in": [3, 4]},
+            [
+                {"param1": "6", "param2": 3},
+                {"param1": "6", "param2": 4},
+            ],
+        ),
     ],
 )
-def test_get_fixed_kwargs(input_kwargs: dict, expected_kwargs: dict) -> None:
+def test_get_list_of_prepared_kwargs(input_kwargs: dict, expected_kwargs: dict) -> None:
     """ Формирование элементов для использования в паттерне поиска """
-    assert RedisItem._get_fixed_kwargs(kwargs=input_kwargs) == expected_kwargs
+    assert RedisItem._get_list_of_prepared_kwargs(kwargs=input_kwargs) == expected_kwargs

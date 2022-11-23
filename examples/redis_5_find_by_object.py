@@ -21,13 +21,13 @@ orm: StorageORM = RedisORM(host="localhost", port=8379)
 
 # Создание трёх записей с последовательным subsystem_id
 items: list[ExampleItem] = []
-for i in range(3):
-    items.append(ExampleItem(subsystem_id=21+i, tag_id=15, date_time=100+i, any_value=17.+i))
-result_of_operation: OperationResult = orm.bulk_create(items=items)
-print(result_of_operation)
+# for i in range(3):
+#     items.append(ExampleItem(subsystem_id=1+i, tag_id=15, date_time=100+i, any_value=17.+i))
+# result_of_operation: OperationResult = orm.bulk_create(items=items)
+# print(result_of_operation)
 
 # Получение всех записей по фильтру
-getted_items: list[ExampleItem] = ExampleItem.filter(subsystem_id__in=[21, 23], tag_id=15)
-for item in getted_items:
-    print(f"{item=}")
+another_item: ExampleItem = ExampleItem(subsystem_id=1, tag_id=15)
+item_by_object: ExampleItem = ExampleItem.filter(_items=[another_item])
+print(f"{item_by_object=}")
 

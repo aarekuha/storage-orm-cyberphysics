@@ -1,4 +1,5 @@
 from enum import Enum
+from typing import Union
 
 
 class OperationStatus(Enum):
@@ -12,7 +13,7 @@ class OperationResult:
     status: OperationStatus
     message: str
 
-    def __init__(self, status: OperationStatus | bool, message: str = "") -> None:
+    def __init__(self, status: Union[OperationStatus, bool], message: str = "") -> None:
         self.status = OperationStatus(status)
         self.message = message
 
