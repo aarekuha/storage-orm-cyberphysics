@@ -86,6 +86,11 @@ class RedisItem(StorageItem):
         cls._db_instance = db_instance
 
     @classmethod
+    def _get_keys_list(cls: Type[T], prefix: str) -> list[bytes]:
+        """ Формирование ключей для поиска в БД на основе префикса и атрибутов класса"""
+        return [f"{prefix}.{key}".encode() for key in cls.__annotations__.keys()]
+
+    @classmethod
     def get(cls: Type[T], _item: T = None, **kwargs) -> Union[T, None]:
         """
             Получение одного объекта по выбранному фильтру
@@ -99,7 +104,7 @@ class RedisItem(StorageItem):
             raise Exception(f"{cls.__name__}.get() has _item and kwargs. It's not possible.")
         filter: str
         if _item:
-            filter = _item._table + ".*"
+            filter = _item._table
         else:
             # Разобрать готовым методом аргуметы в список фильтров
             filters_list: list[str] = cls._get_filters_by_kwargs(**kwargs)
@@ -109,11 +114,11 @@ class RedisItem(StorageItem):
                 )
             filter = filters_list[0]
             # Использование маски для выборки одного объекта не предусмотрено
-            if "*" in filter.rstrip("*") or not filter.rstrip(".*"):
+            if not filter or "*" in filter:
                 raise NotEnoughParamsException(
                     f"{cls.__name__} not enough params to get method..."
                 )
-        keys: list[bytes] = cls._db_instance.keys(pattern=filter)
+        keys: list[bytes] = cls._get_keys_list(prefix=filter)
         values: list[bytes] = cast(list[bytes], cls._db_instance.mget(keys))
         finded_objects: list[T] = cls._objects_from_db_items(items=dict(zip(keys, values)))
         if not finded_objects:
@@ -137,17 +142,26 @@ class RedisItem(StorageItem):
         if len(kwargs) and _items:
             raise Exception(f"{cls.__name__}.filter() has _items and kwargs. It's not possible.")
         filters_list: list[str]
+        keys: list[bytes] = []
         if _items:
-            filters_list = [item._table + ".*" for item in _items]
+            filters_list = [item._table for item in _items]
+            for filter in filters_list:
+                keys += cls._get_keys_list(prefix=filter)
         else:
             # Формирование списка фильтров для возможности поиска входящих в список
             filters_list = cls._get_filters_by_kwargs(**kwargs)
+            for filter in filters_list:
+                keys_list: list[bytes] = cls._get_keys_list(prefix=filter)
+                if [key for key in keys_list if "*" in str(key)]:
+                    # Если не передан один из параметров и нужен поиск по ключам
+                    keys += cls._db_instance.keys(pattern=filter)
+                else:
+                    # Если все параметры присутствуют, то можно использовать только
+                    #   имена атрибутов
+                    keys += cls._get_keys_list(prefix=filter)
 
-        result: list[T] = []
-        for filter in filters_list:
-            keys: list[bytes] = cls._db_instance.keys(pattern=filter)
-            values: list[bytes] = cast(list[bytes], cls._db_instance.mget(keys))
-            result += cls._objects_from_db_items(items=dict(zip(keys, values)))
+        values: list[bytes] = cast(list[bytes], cls._db_instance.mget(keys))
+        result: list[T] = cls._objects_from_db_items(items=dict(zip(keys, values)))
 
         return result
 
@@ -235,7 +249,7 @@ class RedisItem(StorageItem):
                 if not clean_key in prepared_kwargs:
                     table = table.replace(pattern, "*")
             # Заполнение паттерна поиска
-            str_filters.append(table.format(**prepared_kwargs) + ".*")
+            str_filters.append(table.format(**prepared_kwargs))
 
         return str_filters
 
@@ -287,6 +301,7 @@ class RedisItem(StorageItem):
         class CopiedClass(cls):  # type: ignore
             _db_instance = db_instance
         CopiedClass.__annotations__.update(cls.__annotations__)
+        CopiedClass.__name__ = cls.__name__
         return cast(T, CopiedClass)
 
     def save(self) -> OperationResult:

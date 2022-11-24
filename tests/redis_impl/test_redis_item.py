@@ -87,7 +87,7 @@ def test_get_filters_by_kwargs_all(
 ) -> None:
     """ Проверка формирования фильтра для таблицы """
     expected_prefix: str = _get_prefix(src_dict=test_input_dict)
-    expected_filters_list: list[str] = [f"{expected_prefix}.*"]
+    expected_filters_list: list[str] = [expected_prefix]
     assert test_item._get_filters_by_kwargs(**test_input_dict) == expected_filters_list
 
 
@@ -110,7 +110,7 @@ def test_get_filters_by_kwargs_one_of_two(
     # В строке фильтра текущий параметр (param*) должен приобрести значение *
     modified_dict[param_key] = "*"
     expected_prefix: str = _get_prefix(src_dict=modified_dict)
-    expected_filters_list: list[str] = [f"{expected_prefix}.*"]
+    expected_filters_list: list[str] = [expected_prefix]
     # Удалить из передаваемых аргументов текущий параметр
     del modified_dict[param_key]
 
@@ -232,3 +232,30 @@ def test_get_not_enough_params(monkeypatch: MonkeyPatch) -> None:
 def test_get_list_of_prepared_kwargs(input_kwargs: dict, expected_kwargs: dict) -> None:
     """ Формирование элементов для использования в паттерне поиска """
     assert RedisItem._get_list_of_prepared_kwargs(**input_kwargs) == expected_kwargs
+
+
+@pytest.mark.parametrize(
+    "prefix, expected_keys_list", [
+        (
+            "param1.*.param2.*",
+            [
+                b"param1.*.param2.*.attr1",
+                b"param1.*.param2.*.attr2",
+                b"param1.*.param2.*.attr3",
+                b"param1.*.param2.*.attr4",
+            ],
+        ),
+        (
+            "param1.12.param2.99",
+            [
+                b"param1.12.param2.99.attr1",
+                b"param1.12.param2.99.attr2",
+                b"param1.12.param2.99.attr3",
+                b"param1.12.param2.99.attr4",
+            ],
+        ),
+    ],
+)
+def test_get_keys_list(test_item: RedisItem, prefix: str, expected_keys_list: list[bytes]) -> None:
+    """ Формирование ключей для поиска в БД на основе префикса и атрибутов класса"""
+    assert test_item._get_keys_list(prefix=prefix) == expected_keys_list
