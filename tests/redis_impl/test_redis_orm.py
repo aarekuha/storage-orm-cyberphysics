@@ -7,11 +7,6 @@ from .mocked_item import MockedItem
 from .mocked_redis import MockedRedis
 
 
-@pytest.fixture
-def mocked_redis() -> MockedRedis:
-    return MockedRedis()
-
-
 def test_empty_constructor() -> None:
     """ Отсутствие аргументов для подключения """
     with pytest.raises(Exception) as exception:

@@ -14,8 +14,6 @@ from ..storage_item import StorageItem
 from ..operation_result import OperationResult
 from ..operation_result import OperationStatus
 
-from ..exceptions import NotFoundException
-from ..exceptions import MoreThanOneFoundException
 from ..exceptions import MultipleGetParamsException
 from ..exceptions import NotEnoughParamsException
 
@@ -25,7 +23,7 @@ _Key = Union[str, bytes]
 ResponseT = Any
 
 T = TypeVar('T', bound='RedisItem')
-IN_PREFIX = "__in"
+IN_SUFFIX = "__in"
 KEYS_DELIMITER = "."
 
 
@@ -209,15 +207,25 @@ class RedisItem(StorageItem):
                     - расширенный (со списками в значениях)
                 - получить множество комбинаций расширенного словаря
                 - скомбинировать
+
+            Examples:
+                >>>
+                kwargs = {"param1__in": [1, 2], "param2__in": [3, 4]}
+                result = [
+                    {"param1": 1, "param2": 3},
+                    {"param1": 1, "param2": 4},
+                    {"param1": 2, "param2": 3},
+                    {"param1": 2, "param2": 4},
+                ]
         """
         basic_kwargs: dict = {}
         extend_kwargs: dict = {}
         # Разделение на словари "с" и "без" списков в значениях
         for key, value in kwargs.items():
-            if not key.endswith(IN_PREFIX):
+            if not key.endswith(IN_SUFFIX):
                 basic_kwargs[key] = value
             else:
-                extend_kwargs[key.strip(IN_PREFIX)] = value
+                extend_kwargs[key.strip(IN_SUFFIX)] = value
         # Формирование итоговых словарей
         result_kwargs: list[dict] = []
         if extend_kwargs:
