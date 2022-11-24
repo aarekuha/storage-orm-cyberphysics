@@ -152,11 +152,11 @@ class RedisItem(StorageItem):
                 keys_list: list[bytes] = cls._get_keys_list(prefix=filter)
                 if [key for key in keys_list if "*" in str(key)]:
                     # Если не передан один из параметров и нужен поиск по ключам
-                    keys += cls._db_instance.keys(pattern=filter)
+                    keys += cls._db_instance.keys(pattern=filter + ".*")
                 else:
                     # Если все параметры присутствуют, то можно использовать только
                     #   имена атрибутов
-                    keys += cls._get_keys_list(prefix=filter)
+                    keys += keys_list
 
         values: list[bytes] = cast(list[bytes], cls._db_instance.mget(keys))
         result: list[T] = cls._objects_from_db_items(items=dict(zip(keys, values)))
