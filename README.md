@@ -41,7 +41,7 @@
     1. Создать подключение redis.Redis и передать его в конструктор
         ```python
             redis: redis.Redis = redis.Redis(host="localhost", port=8379, db=1)
-            orm: StorageORM = RedisORM(db=redis)
+            orm: StorageORM = RedisORM(client=redis)
         ```
 1. Добавление/редактирование записи (ключами записи являются параметры, указанные в Meta.table модели)
     1. Создать объект на основе модели
@@ -76,7 +76,7 @@
         ```
         , например
         ```python
-            example_items: list[exampleitem] = exampleitem.get(subsystem_id=3, tag_id=15)
+            example_items: ExampleItem = exampleitem.get(subsystem_id=3, tag_id=15)
         ```
 1. Использование нескольких подключений ([пример](examples/redis_3_using_multiple_connections.py))
     - для использования нескольких подключений необходимо в метод StorageItem.using(db_instance=...) передать
@@ -86,6 +86,29 @@
             ...
             result_of_operation: OperationResult = example_item.using(db_instance=redis_another).save()
         ```
+1. Поиск по списку значений ([пример](examples/redis_4_values_in_list.py))
+    - для поиска записей по параметру, находящемуся в списке значений, необходимо параметр дополнить суффиксом __in, в
+      который необходимо передать список искомых значений
+        ```python
+            getted_items: list[ExampleItem] = ExampleItem.filter(subsystem_id__in=[21, 23], tag_id=15)
+        ```
+1. Поиск по предварительно подготовленному объекту ([пример](examples/redis_5_find_by_object.py))
+    - для поиска записи указанным образом, необходимо создать объект с параметрами, необходимыми для поиска и передать
+      его в метод RedisORM.get
+    ```python
+        item: ExampleItem = ExampleItem(subsystem_id=1, tag_id=15)
+        item_by_object: ExampleItem | None = ExampleItem.get(_item=item)
+    ```
+1. Поиск по предварительно подготовленным объектам ([пример](examples/redis_5_find_by_object.py))
+    - для поиска записи указанным образом, необходимо создать объекты с параметрами, необходимыми для поиска и передать
+      их списком в метод RedisORM.filter
+    ```python
+        items: list[ExampleItem] = [
+            ExampleItem(subsystem_id=1, tag_id=15),
+            ExampleItem(subsystem_id=2, tag_id=16),
+        ]
+        item_by_objects: list[ExampleItem] = ExampleItem.filter(_items=items)
+    ```
 
 
 ##### Запуск примеров
@@ -102,4 +125,10 @@
 
     # Пример использования нескольких подключений
     PYTHONPATH="${PYTHONPATH}:." python examples/redis_3_using_multiple_connections.py
+
+    # Пример поиска по списку значений
+    PYTHONPATH="${PYTHONPATH}:." python examples/redis_4_values_in_list.py
+
+    # Пример поиска по переданному подготовленному экземпляру
+    PYTHONPATH="${PYTHONPATH}:." python examples/redis_5_find_by_object.py
 ```
