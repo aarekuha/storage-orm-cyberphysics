@@ -209,7 +209,6 @@ class RedisItem(StorageItem):
                         )
                         fields[key] = None
 
-
             # Формирование Meta из table класса и префикса полученных данных
             table_args: dict = {}
             src_values: list[str] = table.split('.')

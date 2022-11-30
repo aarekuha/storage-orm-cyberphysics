@@ -41,6 +41,8 @@ def test_filter_oom_exclude(test_item: RedisItem, monkeypatch: MonkeyPatch) -> N
     with monkeypatch.context() as patch:
         # Установить фейковое подключение, чтобы пройти проверку на его отсутствие
         patch.setattr(RedisItem, "_db_instance", redis.Redis)
+        # Мок на пинг установленного подключения
+        patch.setattr(RedisItem._db_instance, "ping", lambda: True)
         with pytest.raises(Exception) as exception:
             test_item.filter()
 
@@ -157,6 +159,8 @@ def test_get_multiple_params_exception(monkeypatch: MonkeyPatch) -> None:
     """ Выброс исключения, во время использования метода get(), когда не найдено ни одной записи """
     with monkeypatch.context() as patch, pytest.raises(MultipleGetParamsException):
         patch.setattr(RedisItem, "_db_instance", redis.Redis)
+        # Мок на пинг установленного подключения
+        patch.setattr(RedisItem._db_instance, "ping", lambda: True)
         RedisItem.get(subsystem_id__in=[1, 2])
 
 
@@ -164,6 +168,8 @@ def test_get_not_enough_params(monkeypatch: MonkeyPatch) -> None:
     """ Выброс исключения, во время использования метода get(), когда найдено несколько записей """
     with monkeypatch.context() as patch, pytest.raises(NotEnoughParamsException):
         patch.setattr(RedisItem, "_db_instance", redis.Redis)
+        # Мок на пинг установленного подключения
+        patch.setattr(RedisItem._db_instance, "ping", lambda: True)
         RedisItem.get()
 
 
