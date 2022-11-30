@@ -90,6 +90,16 @@ class RedisItem(StorageItem):
         return [f"{prefix}.{key}".encode() for key in cls.__annotations__.keys()]
 
     @classmethod
+    def _is_db_connected(cls) -> bool:
+        """ Проверка наличия подключения к серверу """
+        try:
+            cls._db_instance.ping()  # type: ignore
+        except redis.exceptions.ConnectionError:
+            return False
+
+        return True
+
+    @classmethod
     def get(cls: Type[T], _item: T = None, **kwargs) -> Union[T, None]:
         """
             Получение одного объекта по выбранному фильтру
@@ -97,7 +107,7 @@ class RedisItem(StorageItem):
                 StorageItem.get(subsystem_id=10, tag_id=55)
                 StorageItem.get(_item=StorageItem(subsystem_id=10))
         """
-        if not cls._db_instance:
+        if not cls._db_instance or not cls._is_db_connected():
             raise Exception("Redis database not connected...")
         if len(kwargs) and _item:
             raise Exception(f"{cls.__name__}.get() has _item and kwargs. It's not possible.")
@@ -133,7 +143,7 @@ class RedisItem(StorageItem):
                 StorageItem.filter(subsystem_id=10, tag_id=55)
                 StorageItem.filter(_items=[StorageItem(subsystem_id=10), ...])
         """
-        if not cls._db_instance:
+        if not cls._db_instance or not cls._is_db_connected():
             raise Exception("Redis database not connected...")
         if not len(kwargs) and not _items:
             raise Exception(f"{cls.__name__}.filter() has empty filter. OOM possible.")
@@ -332,7 +342,6 @@ class RedisItem(StorageItem):
             self._db_instance.mset(mapping=self.mapping)
             return OperationResult(status=OperationStatus.success)
         except Exception as exception:
-            self._on_error_actions(exception=exception)
             return OperationResult(
                 status=OperationStatus.failed,
                 message=str(exception),
