@@ -1,4 +1,5 @@
 from __future__ import annotations
+import logging
 import re
 import copy
 import redis
@@ -118,10 +119,9 @@ class RedisItem(StorageItem):
                 )
         keys: list[bytes] = cls._get_keys_list(prefix=filter)
         values: list[bytes] = cast(list[bytes], cls._db_instance.mget(keys))
-        finded_objects: list[T] = cls._objects_from_db_items(items=dict(zip(keys, values)))
-        if not finded_objects:
+        if not values:
             return None
-
+        finded_objects: list[T] = cls._objects_from_db_items(items=dict(zip(keys, values)))
         result: Union[T, None] = finded_objects[0]
         return result
 
@@ -159,6 +159,10 @@ class RedisItem(StorageItem):
                     keys += keys_list
 
         values: list[bytes] = cast(list[bytes], cls._db_instance.mget(keys))
+        # Очистка пустых значений полученных данных
+        if not [v for v in values if v]:
+            return []
+
         result: list[T] = cls._objects_from_db_items(items=dict(zip(keys, values)))
 
         return result
@@ -186,7 +190,15 @@ class RedisItem(StorageItem):
                 if cls.__annotations__[key] is str:
                     fields[key] = items[field].decode()
                 else:
-                    fields[key] = cls.__annotations__[key](items[field])
+                    try:
+                        fields[key] = cls.__annotations__[key](items[field])
+                    except TypeError:
+                        logging.warning(
+                            f"Type cast exception: {key=}, {field=}, "
+                            f"{items[field]=}, {cls.__annotations__[key]=}"
+                        )
+                        fields[key] = None
+
 
             # Формирование Meta из table класса и префикса полученных данных
             table_args: dict = {}

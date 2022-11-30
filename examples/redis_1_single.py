@@ -11,7 +11,7 @@ from storage_orm import MoreThanOneFoundException
 class ExampleItem(RedisItem):
     # Атрибуты объекта с указанием типа данных (в процессе сбора данных из БД приводится тип)
     date_time: int
-    any_value: float
+    any_value: str
 
     class Meta:
         # Системный префикс записи в Redis
@@ -37,6 +37,5 @@ except NotFoundException:
 
 
 # Получение всех записей по фильтру
-getted_items: list[ExampleItem] = ExampleItem.filter(subsystem_id=3, tag_id=15)
+getted_items: list[ExampleItem] = ExampleItem.filter(subsystem_id=37, tag_id=15)
 print(f"{getted_items=}")
-
