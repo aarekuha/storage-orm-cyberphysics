@@ -89,11 +89,11 @@ class RedisItem(StorageItem):
         """ Формирование ключей для поиска в БД на основе префикса и атрибутов класса"""
         return [f"{prefix}.{key}".encode() for key in cls.__annotations__.keys()]
 
-    @classmethod
-    def _is_db_connected(cls) -> bool:
+    @staticmethod
+    def _is_connected(db_instance: redis.Redis) -> bool:
         """ Проверка наличия подключения к серверу """
         try:
-            cls._db_instance.ping()  # type: ignore
+            db_instance.ping()  # type: ignore
         except redis.exceptions.ConnectionError:
             return False
 
@@ -107,7 +107,7 @@ class RedisItem(StorageItem):
                 StorageItem.get(subsystem_id=10, tag_id=55)
                 StorageItem.get(_item=StorageItem(subsystem_id=10))
         """
-        if not cls._db_instance or not cls._is_db_connected():
+        if not cls._db_instance or not cls._is_connected(db_instance=cls._db_instance):
             raise Exception("Redis database not connected...")
         if len(kwargs) and _item:
             raise Exception(f"{cls.__name__}.get() has _item and kwargs. It's not possible.")
@@ -129,7 +129,7 @@ class RedisItem(StorageItem):
                 )
         keys: list[bytes] = cls._get_keys_list(prefix=filter)
         values: list[bytes] = cast(list[bytes], cls._db_instance.mget(keys))
-        if not values:
+        if not [v for v in values if v]:
             return None
         finded_objects: list[T] = cls._objects_from_db_items(items=dict(zip(keys, values)))
         result: Union[T, None] = finded_objects[0]
@@ -143,7 +143,7 @@ class RedisItem(StorageItem):
                 StorageItem.filter(subsystem_id=10, tag_id=55)
                 StorageItem.filter(_items=[StorageItem(subsystem_id=10), ...])
         """
-        if not cls._db_instance or not cls._is_db_connected():
+        if not cls._db_instance or not cls._is_connected(db_instance=cls._db_instance):
             raise Exception("Redis database not connected...")
         if not len(kwargs) and not _items:
             raise Exception(f"{cls.__name__}.filter() has empty filter. OOM possible.")
@@ -335,7 +335,7 @@ class RedisItem(StorageItem):
 
     def save(self) -> OperationResult:
         """ Одиночная вставка """
-        if not self._db_instance:
+        if not self._db_instance or not self._is_connected(db_instance=self._db_instance):
             raise Exception("Redis database not connected...")
         try:
             self._db_instance.mset(mapping=self.mapping)
@@ -350,10 +350,10 @@ class RedisItem(StorageItem):
         """
             Удаление одного элемента
         """
-        if not self._db_instance:
+        if not self._db_instance or not self._is_connected(db_instance=self._db_instance):
             raise Exception("Redis database not connected...")
         try:
-            self._db_instance.delete(*self.mapping.keys())
+            self._db_instance.delete(*[key for key in self.mapping.keys()])
             return OperationResult(status=OperationStatus.success)
         except Exception as exception:
             return OperationResult(

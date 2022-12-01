@@ -29,7 +29,8 @@ def test_delete(mocked_redis: MockedRedis) -> None:
     """
         Проверка вызова метода delete для одного элемента
     """
-    mocked_item: MockedItem = MockedItem()
+    mocked_item: RedisItem = RedisItem()
+    RedisItem._db_instance = None
     RedisORM(client=mocked_redis).delete(item=mocked_item)
     assert mocked_redis.delete_calls_count == 1
 
@@ -42,6 +43,7 @@ def test_bulk_create_calls_methods(mocked_redis: MockedRedis) -> None:
     """
     items_count: int = 11
     items: list[MockedItem] = [MockedItem() for _ in range(items_count)]
+    RedisItem._db_instance = None
     RedisORM(client=mocked_redis).bulk_create(items=items)
     assert mocked_redis._pipe.calls_count == items_count
     assert mocked_redis._pipe.execute_calls_count == 1
@@ -54,7 +56,8 @@ def test_bulk_delete_calls_methods(mocked_redis: MockedRedis) -> None:
             транзакцию вызовом метода execute
     """
     items_count: int = 11
-    items: list[MockedItem] = [MockedItem() for _ in range(items_count)]
+    items: list[RedisItem] = [MockedItem() for _ in range(items_count)]
+    RedisItem._db_instance = None
     RedisORM(client=mocked_redis).bulk_delete(items=items)
     assert mocked_redis._pipe.delete_calls_count == items_count
     assert mocked_redis._pipe.execute_calls_count == 1

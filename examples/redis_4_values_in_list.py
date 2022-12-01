@@ -28,4 +28,3 @@ print(result_of_operation)
 getted_items: list[ExampleItem] = ExampleItem.filter(subsystem_id__in=[21, 23], tag_id=15)
 for item in getted_items:
     print(f"{item=}")
-

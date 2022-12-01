@@ -1,5 +1,6 @@
 import redis
 import logging
+from typing import TypeVar
 
 from .redis_item import RedisItem
 from .redis_item import T as SubclassItemType
@@ -7,6 +8,8 @@ from ..operation_result import OperationResult
 from ..operation_result import OperationStatus
 
 from ..storage_orm import StorageORM
+
+ChildItem = TypeVar('ChildItem', bound=RedisItem)
 
 
 class RedisORM(StorageORM):
@@ -50,13 +53,13 @@ class RedisORM(StorageORM):
                 message=str(exception),
             )
 
-    def bulk_delete(self, items: list[RedisItem]) -> OperationResult:
+    def bulk_delete(self, items: list[ChildItem]) -> OperationResult:
         """
             Удаление списка элементов
         """
         try:
             for redis_item in items:
-                self._pipe.delete(*redis_item.mapping.keys())
+                self._pipe.delete(*[key for key in redis_item.mapping.keys()])
             self._pipe.execute()
             return OperationResult(status=OperationStatus.success)
         except Exception as exception:

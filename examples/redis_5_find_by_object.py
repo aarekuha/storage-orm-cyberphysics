@@ -33,4 +33,3 @@ print(f"{item_by_object=}")
 another_items: list[ExampleItem] = [ExampleItem(subsystem_id=1, tag_id=15)]
 item_by_objects: list[ExampleItem] = ExampleItem.filter(_items=another_items)
 print(f"{item_by_objects=}")
-

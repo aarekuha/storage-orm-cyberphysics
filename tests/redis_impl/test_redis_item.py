@@ -231,3 +231,9 @@ def test_get_list_of_prepared_kwargs(input_kwargs: dict, expected_kwargs: dict) 
 def test_get_keys_list(test_item: RedisItem, prefix: str, expected_keys_list: list[bytes]) -> None:
     """ Формирование ключей для поиска в БД на основе префикса и атрибутов класса"""
     assert test_item._get_keys_list(prefix=prefix) == expected_keys_list
+
+
+def test_delete(test_item: RedisItem, mocked_redis: MockedRedis) -> None:
+    """ Проверка вызова метода delete один раз для удаления элемента """
+    test_item.using(db_instance=mocked_redis).delete()
+    assert mocked_redis.delete_calls_count == 1

@@ -24,5 +24,12 @@ class MockedRedis(redis.Redis):
     def pipeline(self, **_) -> MockedRedis:
         return self._pipe
 
-    def delete(self, **_) -> None:
+    def delete(self, *_) -> None:
         self.delete_calls_count += 1
+
+    def __repr__(self) -> str:
+        return self.__class__.__name__
+
+    @classmethod
+    def ping(cls) -> bool:
+        return True

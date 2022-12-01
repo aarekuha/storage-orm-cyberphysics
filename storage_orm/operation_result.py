@@ -24,3 +24,7 @@ class OperationResult:
     def __str__(self) -> str:
         message: str = f", message={self.message}" if self.message else ""
         return f"{self.__class__.__name__}: status={self.status}{message}"
+
+    def __repr__(self) -> str:
+        message: str = f", message={self.message}" if self.message else ""
+        return f"{self.__class__.__name__}: status={self.status}{message}"

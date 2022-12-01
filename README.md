@@ -109,6 +109,15 @@
         ]
         item_by_objects: list[ExampleItem] = ExampleItem.filter(_items=items)
     ```
+1. Удаление одного объекта ([пример](examples/redis_6_delete_item.py))
+    ```python
+        example_item: ExampleItem = ExampleItem(subsystem_id=3, tag_id=15)
+        result_of_operation: OperationResult = example_item.delete()
+    ```
+1. Удаление нескольких объектов одновременно ([пример](examples/redis_6_delete_item.py))
+    ```python
+        result_of_operation: OperationResult = orm.bulk_delete(items=example_items)
+    ```
 
 
 ##### Запуск примеров

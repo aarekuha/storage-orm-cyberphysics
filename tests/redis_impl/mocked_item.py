@@ -15,6 +15,3 @@ class MockedItem(RedisItem):
     @property
     def mapping(self) -> dict:
         return dict()
-
-    # def delete(self) -> None:
-    #     self.delete_calls_count += 1

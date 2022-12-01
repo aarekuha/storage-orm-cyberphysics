@@ -4,8 +4,6 @@ from storage_orm import StorageORM
 from storage_orm import RedisORM
 from storage_orm import RedisItem
 from storage_orm import OperationResult
-from storage_orm import NotFoundException
-from storage_orm import MoreThanOneFoundException
 
 
 class ExampleItem(RedisItem):
@@ -27,14 +25,8 @@ result_of_operation: OperationResult = example_item.save()
 print(result_of_operation)
 
 # Получение одной записи
-try:
-    getted_item: Union[ExampleItem, None] = ExampleItem.get(subsystem_id=3, tag_id=15)
-    print(f"{getted_item=}")
-except MoreThanOneFoundException:
-    print("Найдено больше одной записи")
-except NotFoundException:
-    print("Не найдено ни одной записи с переданными параметрами")
-
+getted_item: Union[ExampleItem, None] = ExampleItem.get(subsystem_id=3, tag_id=15)
+print(f"{getted_item=}")
 
 # Получение всех записей по фильтру
 getted_items: list[ExampleItem] = ExampleItem.filter(subsystem_id=37, tag_id=15)
