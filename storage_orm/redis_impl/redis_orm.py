@@ -50,6 +50,28 @@ class RedisORM(StorageORM):
                 message=str(exception),
             )
 
+    def bulk_delete(self, items: list[RedisItem]) -> OperationResult:
+        """
+            Удаление списка элементов
+        """
+        try:
+            for redis_item in items:
+                self._pipe.delete(*redis_item.mapping.keys())
+            self._pipe.execute()
+            return OperationResult(status=OperationStatus.success)
+        except Exception as exception:
+            self._on_error_actions(exception=exception)
+            return OperationResult(
+                status=OperationStatus.failed,
+                message=str(exception),
+            )
+
+    def delete(self, item: RedisItem) -> OperationResult:
+        """
+            Удаление одного элемента
+        """
+        return item.delete()
+
     def _on_error_actions(self, exception: Exception) -> None:
         """
             Действия, выполняющиеся в случае возникновения исключения

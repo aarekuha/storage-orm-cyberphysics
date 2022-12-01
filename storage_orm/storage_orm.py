@@ -26,3 +26,11 @@ class StorageORM(metaclass=ABCMeta):
     @abstractmethod
     def bulk_create(self, items: list[StorageItem]) -> OperationResult:
         raise NotImplementedError
+
+    @abstractmethod
+    def bulk_delete(self, items: list[StorageItem]) -> OperationResult:
+        raise NotImplementedError
+
+    @abstractmethod
+    def delete(self, item: StorageItem) -> OperationResult:
+        raise NotImplementedError

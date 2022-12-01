@@ -25,6 +25,15 @@ def test_save_calls_item_method(mocked_redis: MockedRedis) -> None:
     assert mocked_item.calls_count == 1
 
 
+def test_delete(mocked_redis: MockedRedis) -> None:
+    """
+        Проверка вызова метода delete для одного элемента
+    """
+    mocked_item: MockedItem = MockedItem()
+    RedisORM(client=mocked_redis).delete(item=mocked_item)
+    assert mocked_redis.delete_calls_count == 1
+
+
 def test_bulk_create_calls_methods(mocked_redis: MockedRedis) -> None:
     """
         Вызов метода группового сохранения должен вызывать у
@@ -35,6 +44,19 @@ def test_bulk_create_calls_methods(mocked_redis: MockedRedis) -> None:
     items: list[MockedItem] = [MockedItem() for _ in range(items_count)]
     RedisORM(client=mocked_redis).bulk_create(items=items)
     assert mocked_redis._pipe.calls_count == items_count
+    assert mocked_redis._pipe.execute_calls_count == 1
+
+
+def test_bulk_delete_calls_methods(mocked_redis: MockedRedis) -> None:
+    """
+        Вызов метода группового удаления должен вызывать у
+            pipe методы delete для каждого объекта и закрывать
+            транзакцию вызовом метода execute
+    """
+    items_count: int = 11
+    items: list[MockedItem] = [MockedItem() for _ in range(items_count)]
+    RedisORM(client=mocked_redis).bulk_delete(items=items)
+    assert mocked_redis._pipe.delete_calls_count == items_count
     assert mocked_redis._pipe.execute_calls_count == 1
 
 

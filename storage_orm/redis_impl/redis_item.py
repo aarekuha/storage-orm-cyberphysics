@@ -345,3 +345,18 @@ class RedisItem(StorageItem):
                 status=OperationStatus.failed,
                 message=str(exception),
             )
+
+    def delete(self) -> OperationResult:
+        """
+            Удаление одного элемента
+        """
+        if not self._db_instance:
+            raise Exception("Redis database not connected...")
+        try:
+            self._db_instance.delete(*self.mapping.keys())
+            return OperationResult(status=OperationStatus.success)
+        except Exception as exception:
+            return OperationResult(
+                status=OperationStatus.failed,
+                message=str(exception),
+            )

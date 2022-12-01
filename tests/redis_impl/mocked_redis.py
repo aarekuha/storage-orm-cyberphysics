@@ -5,11 +5,13 @@ import redis
 class MockedRedis(redis.Redis):
     calls_count: int
     execute_calls_count: int
+    delete_calls_count: int
     _pipe: MockedRedis
 
     def __init__(self, is_pipe: bool = False) -> None:
         self.calls_count = 0
         self.execute_calls_count = 0
+        self.delete_calls_count = 0
         if not is_pipe:
             self._pipe = self.__class__(is_pipe=True)
 
@@ -21,3 +23,6 @@ class MockedRedis(redis.Redis):
 
     def pipeline(self, **_) -> MockedRedis:
         return self._pipe
+
+    def delete(self, **_) -> None:
+        self.delete_calls_count += 1
