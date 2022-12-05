@@ -340,7 +340,8 @@ class RedisItem(StorageItem):
             raise Exception("Redis database not connected...")
         try:
             for key, value in self.mapping.items():
-                self._db_instance.set(name=key, value=value, ex=self.Meta.ttl)
+                expiration: Union[int, None] = self.Meta.ttl if hasattr(self.Meta, "ttl") else None
+                self._db_instance.set(name=key, value=value, ex=expiration)
             return OperationResult(status=OperationStatus.success)
         except Exception as exception:
             return OperationResult(

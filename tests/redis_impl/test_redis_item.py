@@ -134,10 +134,11 @@ def test_save_when_instance_not_defined(test_item: RedisItem) -> None:
     assert "not connected" in str(exception.value)
 
 
-def test_save_called_mset(test_item: RedisItem, mocked_redis: MockedRedis) -> None:
-    """ Сохранение объекта в БД должно быть реализовано через redis.mset """
+def test_save_called_set(test_item: RedisItem, mocked_redis: MockedRedis) -> None:
+    """ Сохранение объекта в БД должно быть реализовано через redis.set """
+    calls_count: int = len(test_item.mapping.keys())
     test_item.using(db_instance=mocked_redis).save()
-    assert mocked_redis.calls_count == 1
+    assert mocked_redis.set_calls_count == calls_count
 
 
 def test_objects_from_db_items(
