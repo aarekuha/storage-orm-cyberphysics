@@ -15,6 +15,7 @@ class StorageItem(metaclass=abc.ABCMeta):
 
                 class Meta:
                     table = "subsystem.{subsystem_id}.tag.{tag_id}"
+                    ttl = 3600  # sec, default None
     """
 
     @abc.abstractclassmethod

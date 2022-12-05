@@ -42,8 +42,13 @@ class RedisORM(StorageORM):
     def bulk_create(self, items: list[SubclassItemType]) -> OperationResult:
         """ Групповая вставка """
         try:
-            for redis_item in items:
-                self._pipe.mset(mapping=redis_item.mapping)
+            if hasattr(items[0].Meta, "ttl") and items[0].Meta.ttl:
+                for redis_item in items:
+                    for key, value in redis_item.mapping.items():
+                        self._pipe.set(name=key, value=value, ex=redis_item.Meta.ttl)
+            else:
+                for redis_item in items:
+                    self._pipe.mset(mapping=redis_item.mapping)
             self._pipe.execute()
             return OperationResult(status=OperationStatus.success)
         except Exception as exception:

@@ -36,6 +36,7 @@ class RedisItem(StorageItem):
 
     class Meta:
         table = ""  # Pattern имени записи, например, "subsystem.{subsystem_id}.tag.{tag_id}"
+        ttl = None  # Время жизни объекта в базе данных
 
     def __init_subclass__(cls) -> None:
         cls._keys_positions = {
@@ -338,7 +339,8 @@ class RedisItem(StorageItem):
         if not self._db_instance or not self._is_connected(db_instance=self._db_instance):
             raise Exception("Redis database not connected...")
         try:
-            self._db_instance.mset(mapping=self.mapping)
+            for key, value in self.mapping.items():
+                self._db_instance.set(name=key, value=value, ex=self.Meta.ttl)
             return OperationResult(status=OperationStatus.success)
         except Exception as exception:
             return OperationResult(
