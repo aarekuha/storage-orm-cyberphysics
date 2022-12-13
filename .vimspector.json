@@ -5,7 +5,7 @@
       "configuration": {
         "python": "venv/bin/python",
         "request": "launch",
-        "program": "main.py",
+        "program": "${file}",
         "stopOnEntry": false,
         "cwd": "${workspaceRoot}",
         "showReturnValue": true,

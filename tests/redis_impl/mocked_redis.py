@@ -1,6 +1,8 @@
 from __future__ import annotations
 import redis
 
+from typing import Callable
+
 
 class MockedRedis(redis.Redis):
     calls_count: int
@@ -34,6 +36,9 @@ class MockedRedis(redis.Redis):
 
     def __repr__(self) -> str:
         return self.__class__.__name__
+
+    def register_script(self, *_) -> Callable:
+        return lambda *_: _
 
     @classmethod
     def ping(cls) -> bool:

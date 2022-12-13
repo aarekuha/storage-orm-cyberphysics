@@ -10,6 +10,7 @@ from typing import Union
 from typing import Mapping
 from typing import Type
 from typing import TypeVar
+from typing import Callable
 
 from ..storage_item import StorageItem
 from ..operation_result import OperationResult
@@ -33,10 +34,12 @@ class RedisItem(StorageItem):
     _keys_positions: dict[str, int]
     _params: Mapping[_Key, _Value]
     _db_instance: Union[redis.Redis, None] = None
+    _on_init_callback: Union[Callable[[RedisItem,], None], None] = None
 
     class Meta:
         table = ""  # Pattern имени записи, например, "subsystem.{subsystem_id}.tag.{tag_id}"
         ttl = None  # Время жизни объекта в базе данных
+        frame_size = 100  # Максимальный размер frame'а
 
     def __init_subclass__(cls) -> None:
         cls._keys_positions = {
@@ -76,6 +79,9 @@ class RedisItem(StorageItem):
         }
         # Перегрузка методов для экземпляра класса
         self.using = self.instance_using  # type: ignore
+        if isinstance(self._on_init_callback, Callable):
+            # RedisFrame.ltrim_by_item(item: RedisItem)
+            self._on_init_callback(self)
 
     def __getattr__(self, attr_name: str):
         return object.__getattribute__(self, attr_name)

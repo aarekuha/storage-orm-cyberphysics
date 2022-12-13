@@ -29,7 +29,7 @@ def test_delete(mocked_redis: MockedRedis) -> None:
     """
         Проверка вызова метода delete для одного элемента
     """
-    mocked_item: RedisItem = RedisItem()
+    mocked_item: RedisItem = MockedItem()
     RedisItem._db_instance = None
     RedisORM(client=mocked_redis).delete(item=mocked_item)
     assert mocked_redis.delete_calls_count == 1
