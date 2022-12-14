@@ -31,7 +31,7 @@ class RedisORM(StorageORM):
         elif host:
             self._client = redis.Redis(host=host, port=port, db=db)
         else:
-            raise Exception(f"StorageORM-init must contains redis_client or host values...")
+            raise Exception("StorageORM-init must contains redis_client or host values...")
 
         self._pipe = self._client.pipeline()
         if not RedisItem._db_instance:

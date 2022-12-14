@@ -44,8 +44,8 @@ class RedisItem(StorageItem):
     def __init_subclass__(cls) -> None:
         cls._keys_positions = {
             index.replace("{", "").replace("}", ""): key
-                for key, index in enumerate(cls.Meta.table.split(KEYS_DELIMITER))
-                    if index.startswith("{") and index.endswith("}")
+            for key, index in enumerate(cls.Meta.table.split(KEYS_DELIMITER))
+            if index.startswith("{") and index.endswith("}")
         }
 
     @classmethod
@@ -75,7 +75,7 @@ class RedisItem(StorageItem):
         self._table = self.__class__.Meta.table.format(**kwargs)
         self._params = {
             key: kwargs.get(key, None)
-                for key in self.__class__.__annotations__
+            for key in self.__class__.__annotations__
         }
         # Перегрузка методов для экземпляра класса
         self.using = self.instance_using  # type: ignore
@@ -191,7 +191,7 @@ class RedisItem(StorageItem):
         #   (уникальные ключи, без имён полей)
         tables: set[str] = {
             str(key).rsplit(KEYS_DELIMITER, 1)[0]
-                for key in items.keys()
+            for key in items.keys()
         }
         result_items: list[T] = []
         for table in tables:
@@ -260,7 +260,7 @@ class RedisItem(StorageItem):
             # Получить множество комбинаций расширенного словаря
             mixed_kwargs: list[dict] = list(
                 dict(zip(extend_kwargs.keys(), values))
-                    for values in itertools.product(*extend_kwargs.values())
+                for values in itertools.product(*extend_kwargs.values())
             )
             # Обогатить расширенные словари базовым
             result_kwargs = [mixed_item | basic_kwargs for mixed_item in mixed_kwargs]
@@ -282,7 +282,7 @@ class RedisItem(StorageItem):
         for prepared_kwargs in prepared_kwargs_list:
             for pattern in patterns:
                 clean_key: str = pattern.strip("{").strip("}")
-                if not clean_key in prepared_kwargs:
+                if clean_key not in prepared_kwargs:
                     table = table.replace(pattern, "*")
             # Заполнение паттерна поиска
             str_filters.append(table.format(**prepared_kwargs))
@@ -294,7 +294,7 @@ class RedisItem(StorageItem):
         """ Формирование ключей и значений для БД """
         return {
             KEYS_DELIMITER.join([self._table, str(key)]): value
-                for key, value in self._params.items()
+            for key, value in self._params.items()
         }
 
     def __repr__(self) -> str:

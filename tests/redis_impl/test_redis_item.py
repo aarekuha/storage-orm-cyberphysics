@@ -1,22 +1,18 @@
 import pytest
 import redis
 from pytest import MonkeyPatch
-from typing import Union
 
 from storage_orm import RedisItem
 from storage_orm import MultipleGetParamsException
 from storage_orm import NotEnoughParamsException
-
-from .mocked_redis import MockedRedis
-
 
 
 def _get_prefix(src_dict: dict) -> str:
     """ Искусственное формирование префикса из данных словаря """
     expected_prefix: str = ".".join([
         f"{key}.{value}"
-            for key, value in src_dict.items()
-                if key.startswith("param")
+        for key, value in src_dict.items()
+        if key.startswith("param")
     ])
     return expected_prefix
 
@@ -92,8 +88,8 @@ def test_mapping(test_item: RedisItem, test_input_dict: dict) -> None:
     # Подготовка атрибутов с префиксом для проверки
     expected_dict: dict = {
         f"{expected_prefix}.{key}": value
-            for key, value in test_input_dict.items()
-                if not key.startswith("param")
+        for key, value in test_input_dict.items()
+        if not key.startswith("param")
     }
     assert test_item.mapping == expected_dict
 
@@ -134,11 +130,12 @@ def test_save_when_instance_not_defined(test_item: RedisItem) -> None:
     assert "not connected" in str(exception.value)
 
 
-def test_save_called_set(test_item: RedisItem, mocked_redis: MockedRedis) -> None:
+def test_save_called_set(test_item: RedisItem, test_redis: redis.Redis) -> None:
     """ Сохранение объекта в БД должно быть реализовано через redis.set """
-    calls_count: int = len(test_item.mapping.keys())
-    test_item.using(db_instance=mocked_redis).save()
-    assert mocked_redis.set_calls_count == calls_count
+    expected_keys_count: int = len(test_item.mapping.keys())
+    test_item.using(db_instance=test_redis).save()
+    db_keys_count: int = len(test_redis.keys())
+    assert db_keys_count == expected_keys_count
 
 
 def test_objects_from_db_items(
@@ -150,8 +147,8 @@ def test_objects_from_db_items(
     expected_prefix: str = _get_prefix(src_dict=test_input_dict)
     test_data: dict[bytes, bytes] = {
         f"{expected_prefix}.{key}".encode(): value if isinstance(value, bytes) else str(value).encode()
-            for key, value in test_input_dict.items()
-                if key.startswith("attr")
+        for key, value in test_input_dict.items()
+        if key.startswith("attr")
     }
     assert test_item._objects_from_db_items(items=test_data) == [expected_item,]
 
@@ -234,7 +231,14 @@ def test_get_keys_list(test_item: RedisItem, prefix: str, expected_keys_list: li
     assert test_item._get_keys_list(prefix=prefix) == expected_keys_list
 
 
-def test_delete(test_item: RedisItem, mocked_redis: MockedRedis) -> None:
+def test_delete(test_item: RedisItem, test_redis: redis.Redis) -> None:
     """ Проверка вызова метода delete один раз для удаления элемента """
-    test_item.using(db_instance=mocked_redis).delete()
-    assert mocked_redis.delete_calls_count == 1
+    # Создать один элемент для проверки
+    expected_keys_count: int = len(test_item.mapping.keys())
+    test_item.using(db_instance=test_redis).save()
+    db_keys_count: int = len(test_redis.keys())
+    assert db_keys_count == expected_keys_count
+    # Удалить элемент и проверить, что база опустела
+    test_item.using(db_instance=test_redis).delete()
+    db_keys_count: int = len(test_redis.keys())
+    assert db_keys_count == 0

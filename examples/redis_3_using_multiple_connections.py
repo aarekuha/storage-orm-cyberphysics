@@ -4,6 +4,7 @@ from typing import Union
 from storage_orm import RedisItem
 from storage_orm import OperationResult
 
+
 class ExampleItem(RedisItem):
     # Атрибуты объекта с указанием типа данных (в процессе сбора данных из БД приводится тип)
     date_time: int
@@ -14,6 +15,7 @@ class ExampleItem(RedisItem):
         # Ключи указанные в префиксе обязательны для передачи в момент создания экземпляра
         table = "subsystem.{subsystem_id}.tag.{tag_id}"
 
+
 # Во время первого подключения устанавливается глобальное подключение к Redis
 redis_1: redis.Redis = redis.Redis(host="localhost", port=8379, db=1)
 redis_2: redis.Redis = redis.Redis(host="localhost", port=8379, db=2)
@@ -23,10 +25,10 @@ redis_2: redis.Redis = redis.Redis(host="localhost", port=8379, db=2)
 """
 
 """ Запись в БД используя вызов save у экземпляра модели """
-## Redis #1
+# Redis #1
 example_item: ExampleItem = ExampleItem(subsystem_id=3, tag_id=15, date_time=1, any_value=11.)
 result_of_operation: OperationResult = example_item.using(db_instance=redis_1).save()
-## Redis #2
+# Redis #2
 example_item: ExampleItem = ExampleItem(subsystem_id=3, tag_id=15, date_time=2, any_value=22.)
 result_of_operation: OperationResult = example_item.using(db_instance=redis_2).save()
 

@@ -1,11 +1,9 @@
 import pytest
-import redis
 from typing import Union
 from pytest_mock_resources import create_redis_fixture
 
 from storage_orm import RedisItem
 from storage_orm import RedisFrame
-from .redis_impl.mocked_redis import MockedRedis
 
 
 test_redis = create_redis_fixture()
@@ -46,8 +44,3 @@ def test_input_dict() -> dict[str, Union[str, bytes, float, int]]:
 @pytest.fixture
 def test_frame(test_redis) -> RedisFrame:
     return RedisFrame(client=test_redis)
-
-
-@pytest.fixture
-def mocked_redis() -> MockedRedis:
-    return MockedRedis()

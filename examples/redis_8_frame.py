@@ -18,6 +18,7 @@ class ExampleItem(RedisItem):
         ttl = 10  # Время жизни объекта в базе данных
         frame_size = 4  # Размер frame'а
 
+
 # Во время первого подключения устанавливается глобальное подключение к Redis
 orm: StorageORM = RedisORM(host="localhost", port=8379)
 

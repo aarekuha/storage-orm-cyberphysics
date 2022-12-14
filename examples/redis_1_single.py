@@ -16,6 +16,7 @@ class ExampleItem(RedisItem):
         # Ключи указанные в префиксе обязательны для передачи в момент создания экземпляра
         table = "subsystem.{subsystem_id}.tag.{tag_id}"
 
+
 # Во время первого подключения устанавливается глобальное подключение к Redis
 orm: StorageORM = RedisORM(host="localhost", port=8379)
 

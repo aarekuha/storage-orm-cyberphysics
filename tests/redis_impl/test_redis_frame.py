@@ -4,13 +4,11 @@ import redis
 from storage_orm import RedisItem
 from storage_orm import RedisFrame
 
-from .mocked_item import MockedItem
-
 
 def test_add_one_item(
     test_frame: RedisFrame,
     test_redis: redis.Redis,
-    test_item: MockedItem,
+    test_item: RedisItem,
 ) -> None:
     """ Проверка на добавление одного элемента """
     test_frame.add(item_or_items=test_item)
@@ -24,7 +22,7 @@ def test_add_one_item(
 def test_add_another_one_item(
     test_frame: RedisFrame,
     test_redis: redis.Redis,
-    test_item: MockedItem,
+    test_item: RedisItem,
 ) -> None:
     """ Проверка на добавление ещё одного элемента """
     test_frame.add(item_or_items=test_item)
@@ -44,7 +42,7 @@ def test_add_another_one_item(
 def test_add_multiple_items(
     test_frame: RedisFrame,
     test_redis: redis.Redis,
-    test_item: MockedItem,
+    test_item: RedisItem,
 ) -> None:
     """ Добавление нескольких элементов """
     COUNT_OF_ITEMS: int = 10
@@ -59,7 +57,7 @@ def test_add_multiple_items(
 def test_add_more_multiple_items(
     test_frame: RedisFrame,
     test_redis: redis.Redis,
-    test_item: MockedItem,
+    test_item: RedisItem,
 ) -> None:
     """ Добавление двух пачек по COUNT_OF_ITEMS элементов к одному ключу """
     COUNT_OF_ITEMS: int = 10
@@ -79,7 +77,7 @@ def test_add_more_multiple_items(
 
 def test_get_frame_size(
     test_frame: RedisFrame,
-    test_item: MockedItem,
+    test_item: RedisItem,
 ) -> None:
     """ Получение максимального количества элементов в одном frame'е """
     expected_size: int = 33
@@ -95,11 +93,11 @@ def test_get_frame_size(
 def test_add_multiple_different_items(
     test_frame: RedisFrame,
     test_redis: redis.Redis,
-    test_item: MockedItem,
+    test_item: RedisItem,
 ) -> None:
     """ Добавление нескольких разнородных элементов """
-    test_item_1: MockedItem = copy.copy(test_item)
-    test_item_2: MockedItem = copy.copy(test_item)
+    test_item_1: RedisItem = copy.copy(test_item)
+    test_item_2: RedisItem = copy.copy(test_item)
     test_item_2._table = test_item_2._table.replace("param1", "another_param1")
     test_frame.add(item_or_items=[test_item_1, test_item_2])
     key: str = test_frame._make_key(item=test_item_1)
@@ -113,11 +111,11 @@ def test_add_multiple_different_items(
 def test_clear(
     test_frame: RedisFrame,
     test_redis: redis.Redis,
-    test_item: MockedItem,
+    test_item: RedisItem,
 ) -> None:
     """ Создание двух разных элементов, заполнение БД, очистка одного из элементов """
-    test_item_1: MockedItem = copy.copy(test_item)
-    test_item_2: MockedItem = copy.copy(test_item)
+    test_item_1: RedisItem = copy.copy(test_item)
+    test_item_2: RedisItem = copy.copy(test_item)
     test_item_2._table = test_item_2._table.replace("param1", "another_param1")
     COUNT_OF_ITEMS: int = 10
     key: str = test_frame._make_key(item=test_item)
@@ -135,11 +133,11 @@ def test_clear(
 
 def test_get_all(
     test_frame: RedisFrame,
-    test_item: MockedItem,
+    test_item: RedisItem,
 ) -> None:
     COUNT_OF_ITEMS: int = 13
     test_frame.add(item_or_items=[test_item for _ in range(COUNT_OF_ITEMS)])
-    result: list[MockedItem] = test_frame.get(item=test_item)
+    result: list[RedisItem] = test_frame.get(item=test_item)
     assert len(result) == COUNT_OF_ITEMS
     assert result[0] == test_item
 
@@ -148,12 +146,15 @@ def test_get_first_last(test_frame: RedisFrame) -> None:
     """ Проверка на выбор крайних элементов """
     COUNT_OF_ITEMS: int = 13
     SHARED_PARAMS: dict = {"param1": 1, "attr2": 0}
+
     class TestItem(RedisItem):
         attr1: int
         attr2: int
+
         class Meta:
             table = "param1.{param1}"
             frame_size = COUNT_OF_ITEMS + 2  # Дополнительно первый и последний
+
     # Общая характеристика элементво
     item: RedisItem = TestItem(**SHARED_PARAMS, attr1=0)
     # Элемент добавленный первым
@@ -180,7 +181,7 @@ def test_get_first_last(test_frame: RedisFrame) -> None:
 def test_add_squeeze_out_oldest(
     test_frame: RedisFrame,
     test_redis: redis.Redis,
-    test_item: MockedItem,
+    test_item: RedisItem,
 ) -> None:
     """
     Проверка на то, что самый старый элемент, при добавлении нового

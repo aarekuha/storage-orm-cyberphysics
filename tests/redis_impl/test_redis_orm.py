@@ -1,10 +1,9 @@
 import pytest
+import copy
+import redis
 
 from storage_orm import RedisORM
 from storage_orm import RedisItem
-
-from .mocked_item import MockedItem
-from .mocked_redis import MockedRedis
 
 
 def test_empty_constructor() -> None:
@@ -15,74 +14,115 @@ def test_empty_constructor() -> None:
     assert "must contains" in str(exception.value)
 
 
-def test_save_calls_item_method(mocked_redis: MockedRedis) -> None:
-    """
-        Вызов метода сохранение одного элемента должен
-            вызывать метод у самого элемента
-    """
-    mocked_item: MockedItem = MockedItem()
-    RedisORM(client=mocked_redis).save(item=mocked_item)
-    assert mocked_item.calls_count == 1
+def test_save_item(
+    test_redis: redis.Redis,
+    test_item: RedisItem,
+) -> None:
+    """ Проверка сохранения данных """
+    RedisORM(client=test_redis).save(item=test_item)
+    for key, value in test_item.mapping.items():
+        db_item: bytes | None = test_redis.get(key)
+        # Подготовка проверяемого значение
+        expected_value: bytes | None = None
+        if isinstance(value, str):
+            expected_value = value.encode()
+        elif isinstance(value, bytes):
+            expected_value = value
+        else:
+            expected_value = str(value).encode()
+        assert db_item == expected_value
 
 
-def test_delete(mocked_redis: MockedRedis) -> None:
-    """
-        Проверка вызова метода delete для одного элемента
-    """
-    mocked_item: RedisItem = MockedItem()
-    RedisItem._db_instance = None
-    RedisORM(client=mocked_redis).delete(item=mocked_item)
-    assert mocked_redis.delete_calls_count == 1
+def test_delete(test_redis: redis.Redis, test_item: RedisItem) -> None:
+    """ Проверка вызова метода delete для одного элемента """
+    RedisORM(client=test_redis).save(item=test_item)
+    count_of_item_fields: int = len(test_item._params)
+    count_of_db_items: int = len(test_redis.keys())
+    assert count_of_item_fields == count_of_db_items
 
 
-def test_bulk_create_calls_methods(mocked_redis: MockedRedis) -> None:
+def test_bulk_create_rewrite_one_item(test_redis: redis.Redis, test_item: RedisItem) -> None:
     """
-        Вызов метода группового сохранения должен вызывать у
-            pipe методы mset для каждого объекта и закрывать
-            транзакцию вызовом метода execute
+    Вызов метода группового сохранения должен создать по одной записи для каждого атрибута
+    В тесте используется с разными атрибутами (значениями) один и тот же элемент
+    Для него должна быть создана только одна группа записей в БД
     """
     items_count: int = 11
-    items: list[MockedItem] = [MockedItem() for _ in range(items_count)]
-    RedisItem._db_instance = None
-    RedisORM(client=mocked_redis).bulk_create(items=items)
-    assert mocked_redis._pipe.calls_count == items_count
-    assert mocked_redis._pipe.execute_calls_count == 1
+    items: list[RedisItem] = []
+    for i in range(items_count):
+        another_item: RedisItem = copy.copy(test_item)
+        # Изменить значение атрибутов - запись в БД должна получиться та же
+        another_item._params = {key: i for key in another_item._params.keys()}
+        items.append(another_item)
+    RedisORM(client=test_redis).bulk_create(items=items)
+    count_of_db_items: int = len(test_redis.keys())
+    count_of_item_fields: int = len(test_item._params)
+    assert count_of_db_items == count_of_item_fields
 
 
-def test_bulk_delete_calls_methods(mocked_redis: MockedRedis) -> None:
-    """
-        Вызов метода группового удаления должен вызывать у
-            pipe методы delete для каждого объекта и закрывать
-            транзакцию вызовом метода execute
-    """
+def test_bulk_create_different_items(test_redis: redis.Redis, test_item: RedisItem) -> None:
+    """ Вызов метода группового сохранения должен создать определенное количество записей """
     items_count: int = 11
-    items: list[RedisItem] = [MockedItem() for _ in range(items_count)]
-    RedisItem._db_instance = None
-    RedisORM(client=mocked_redis).bulk_delete(items=items)
-    assert mocked_redis._pipe.delete_calls_count == items_count
-    assert mocked_redis._pipe.execute_calls_count == 1
+    items: list[RedisItem] = []
+    for i in range(items_count):
+        another_item: RedisItem = copy.copy(test_item)
+        # Дополнить ключи различными значениями счетчика,
+        #   чтобы получились разные записи
+        another_item._table += str(i)
+        items.append(another_item)
+    RedisORM(client=test_redis).bulk_create(items=items)
+    count_of_db_items: int = len(test_redis.keys())
+    count_of_item_fields: int = len(test_item._params)
+    total_keys_expected: int = count_of_item_fields * items_count
+    assert count_of_db_items == total_keys_expected
 
 
-def test_init_global_db_connection(mocked_redis: MockedRedis) -> None:
+def test_bulk_delete(test_redis: redis.Redis, test_item: RedisItem) -> None:
+    """ Вызов метода группового удаления должен удалить записи переданных объектов """
+    items_count: int = 11
+    # Создать элементы для проверки
+    items: list[RedisItem] = []
+    for i in range(items_count):
+        another_item: RedisItem = copy.copy(test_item)
+        # Дополнить ключи различными значениями счетчика,
+        #   чтобы получились разные записи
+        another_item._table += str(i)
+        items.append(another_item)
+    RedisORM(client=test_redis).bulk_create(items=items)
+    count_of_db_items: int = len(test_redis.keys())
+    count_of_item_fields: int = len(test_item._params)
+    total_keys_expected: int = count_of_item_fields * items_count
+    assert count_of_db_items == total_keys_expected
+    # Удаление почти всех объектов (один оставить)
+    RedisORM(client=test_redis).bulk_delete(items=items[:-1])
+    count_of_db_items: int = len(test_redis.keys())
+    count_of_item_fields: int = len(test_item._params)
+    # Должны остаться значения только одного объекта
+    total_keys_expected: int = count_of_item_fields
+    assert count_of_db_items == total_keys_expected
+
+
+def test_init_global_db_connection(test_redis: redis.Redis) -> None:
     """
-        При первом подключении должна устанавливаться глобальная
-            ссылка на него
+    При первом подключении должна устанавливаться глобальная
+        ссылка на него
     """
     # Удалить установленное подключение
     RedisItem._db_instance = None
     # Создать новое и проверить, что именно оно проинициализировалось
-    RedisORM(client=mocked_redis)
-    assert id(MockedItem._db_instance) == id(mocked_redis)
+    RedisORM(client=test_redis)
+    assert id(RedisItem._db_instance) == id(test_redis)
 
 
-def test_noreinit_global_db_connection(mocked_redis: MockedRedis) -> None:
+def test_noreinit_global_db_connection(test_redis: redis.Redis) -> None:
     """
-        При первом подключении должна устанавливаться глобальная
-            ссылка на него
+    При первом подключении должна устанавливаться глобальная
+        ссылка на него, которая не должна заменяться, при последующих
+        подключениях
     """
     # Установить стороннее подключение в случае отсутствия
     if RedisItem._db_instance is None:
-        RedisORM(client=MockedRedis())
+        RedisORM(client=redis.Redis())
     # Создать новое и проверить, что сохранилось первое подключение
-    RedisORM(client=mocked_redis)
-    assert id(MockedItem._db_instance) != id(mocked_redis)
+    RedisORM(client=test_redis)
+    assert id(RedisItem._db_instance) != id(test_redis)

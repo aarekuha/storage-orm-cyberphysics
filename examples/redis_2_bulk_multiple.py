@@ -5,6 +5,7 @@ from storage_orm import RedisORM
 from storage_orm import RedisItem
 from storage_orm import OperationResult
 
+
 class ExampleItem(RedisItem):
     # Атрибуты объекта с указанием типа данных (в процессе сбора данных из БД приводится тип)
     date_time: int
@@ -14,6 +15,7 @@ class ExampleItem(RedisItem):
         # Системный префикс записи в Redis
         # Ключи указанные в префиксе обязательны для передачи в момент создания экземпляра
         table = "subsystem.{subsystem_id}.another_key.{another_key_value}.tag.{tag_id}"
+
 
 # Во время первого подключения устанавливается глобальное подключение к Redis
 orm: StorageORM = RedisORM(host="localhost", port=8379)
