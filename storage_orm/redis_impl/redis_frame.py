@@ -105,6 +105,7 @@ class RedisFrame(StorageFrame):
         values: tuple = tuple(
             item.__dict__[key]
             for key in sorted(item.__annotations__.keys())
+            if not key.startswith("_")
         )
         serialized_object: bytes = pickle.dumps(values)
         queue_size: int = self._get_frame_size(item=item)
