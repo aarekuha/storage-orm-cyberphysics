@@ -130,8 +130,8 @@ def test_save_when_instance_not_defined(test_item: RedisItem) -> None:
     assert "not connected" in str(exception.value)
 
 
-def test_save_called_set(test_item: RedisItem, test_redis: redis.Redis) -> None:
-    """ Сохранение объекта в БД должно быть реализовано через redis.set """
+def test_save(test_item: RedisItem, test_redis: redis.Redis) -> None:
+    """ Сохранение объекта в БД """
     expected_keys_count: int = len(test_item.mapping.keys())
     test_item.using(db_instance=test_redis).save()
     db_keys_count: int = len(test_redis.keys())
