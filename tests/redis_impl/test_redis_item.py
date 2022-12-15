@@ -242,3 +242,19 @@ def test_delete(test_item: RedisItem, test_redis: redis.Redis) -> None:
     test_item.using(db_instance=test_redis).delete()
     db_keys_count: int = len(test_redis.keys())
     assert db_keys_count == 0
+
+
+def test_set_ttl(test_item: RedisItem) -> None:
+    """ Проверка изменения ttl соответствующим вызовом метода """
+    prev_ttl: int = test_item.Meta.ttl or 1
+    new_ttl: int = prev_ttl * 2
+    test_item.set_ttl(new_ttl)
+    assert test_item.Meta.ttl == new_ttl
+
+
+def test_set_frame_size(test_item: RedisItem) -> None:
+    """ Проверка изменения frame_size соответствующим вызовом метода """
+    prev_frame_size: int = test_item.Meta.frame_size or 1
+    new_frame_size: int = prev_frame_size * 2
+    test_item.set_frame_size(new_frame_size)
+    assert test_item.Meta.frame_size == new_frame_size

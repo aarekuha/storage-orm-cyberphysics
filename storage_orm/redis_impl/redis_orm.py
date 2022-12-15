@@ -38,8 +38,6 @@ class RedisORM(StorageORM):
             RedisItem._set_global_instance(db_instance=self._client)
 
         self._frame = RedisFrame(client=self._client)
-        # Подрезка списков, согласно установленной в subclass'е величине
-        RedisItem._on_init_callback = self._frame.ltrim_by_item
 
     @property
     def frame(self) -> RedisFrame:

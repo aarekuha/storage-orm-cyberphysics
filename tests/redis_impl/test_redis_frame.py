@@ -192,3 +192,31 @@ def test_add_squeeze_out_oldest(
     key = test_frame._make_key(item=test_item)
     current_frame_size: int = test_redis.llen(key)
     assert current_frame_size == RedisFrame.DEFAULT_QUEUE_SIZE
+
+
+def test_item_set_frame_size(
+    test_frame: RedisFrame,
+    test_redis: redis.Redis,
+) -> None:
+    """ Подрезка frame'а при изменении frame_size 'на лету' """
+    INIT_FRAME_SIZE: int = 100
+
+    class TestItem(RedisItem):
+        class Meta:
+            table = "param1.{param1}"
+            frame_size = INIT_FRAME_SIZE
+
+    # Подготовка данных для образца
+    test_item: RedisItem = TestItem(param1=1)
+    test_frame.add([test_item for _ in range(INIT_FRAME_SIZE)])
+    key: str = test_frame._make_key(item=test_item)
+    db_frame_len: int = test_redis.llen(key)
+    assert db_frame_len == INIT_FRAME_SIZE
+    # Обрезка половины frame'а
+    NEW_FRAME_SIZE: int = round(INIT_FRAME_SIZE / 2)
+    test_item._db_instance = test_redis
+    test_item.set_frame_size(NEW_FRAME_SIZE)
+
+    assert test_item.Meta.frame_size == NEW_FRAME_SIZE
+    db_frame_len: int = test_redis.llen(key)
+    assert db_frame_len == NEW_FRAME_SIZE

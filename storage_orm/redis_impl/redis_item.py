@@ -34,12 +34,12 @@ class RedisItem(StorageItem):
     _keys_positions: dict[str, int]
     _params: Mapping[_Key, _Value]
     _db_instance: Union[redis.Redis, None] = None
-    _on_init_callback: Union[Callable[[RedisItem,], None], None] = None
+    _on_init_ltrim: Union[Callable[[RedisItem,], None], None] = None
 
     class Meta:
-        table = ""  # Pattern имени записи, например, "subsystem.{subsystem_id}.tag.{tag_id}"
-        ttl = None  # Время жизни объекта в базе данных
-        frame_size = 100  # Максимальный размер frame'а
+        table: str = ""  # Pattern имени записи, например, "subsystem.{subsystem_id}.tag.{tag_id}"
+        ttl: int | None = None  # Время жизни объекта в базе данных
+        frame_size: int | None = 100  # Максимальный размер frame'а
 
     def __init_subclass__(cls) -> None:
         cls._keys_positions = {
@@ -68,7 +68,30 @@ class RedisItem(StorageItem):
 
         return result_kwargs
 
+    def set_ttl(self, new_ttl: int) -> None:
+        """ Установка настойки времени жизни объекта 'на лету' """
+        setattr(self.Meta, "ttl", new_ttl)
+
+    def set_frame_size(self, new_frame_size: int) -> None:
+        """ Установка настойки максимального размера frame'а 'на лету' """
+        old_frame_size: int = self.Meta.frame_size or 0
+        if old_frame_size == new_frame_size:
+            return
+
+        setattr(self.Meta, "frame_size", new_frame_size)
+
+        # Проверка необходимости подрезки frame'а
+        if old_frame_size > new_frame_size:
+            # Подрезка фрейма в БД
+            if isinstance(self._on_init_ltrim, Callable):
+                self._on_init_ltrim(self)
+
     def __init__(self, **kwargs) -> None:
+        # Установка атрибутов из конструктора
+        for config_key in ["ttl", "frame_size"]:
+            if config_key in kwargs.keys():
+                setattr(self.Meta, config_key, kwargs[config_key])
+                del kwargs[config_key]
         # Формирование полей модели из переданных дочернему классу аргументов
         [self.__dict__.__setitem__(key, value) for key, value in kwargs.items()]
         # Формирование изолированной среды с данными класса для дальнейшей работы с БД
@@ -79,9 +102,8 @@ class RedisItem(StorageItem):
         }
         # Перегрузка методов для экземпляра класса
         self.using = self.instance_using  # type: ignore
-        if isinstance(self._on_init_callback, Callable):
-            # RedisFrame.ltrim_by_item(item: RedisItem)
-            self._on_init_callback(self)
+        if isinstance(self._on_init_ltrim, Callable):
+            self._on_init_ltrim(self)
 
     def __getattr__(self, attr_name: str):
         return object.__getattribute__(self, attr_name)

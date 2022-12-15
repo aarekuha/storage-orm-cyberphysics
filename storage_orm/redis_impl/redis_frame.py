@@ -54,6 +54,8 @@ class RedisFrame(StorageFrame):
                 redis.call('lpop', KEYS[1])
             end
         """)
+        # Подрезка списков, согласно установленной в subclass'е величине
+        RedisItem._on_init_ltrim = self.ltrim_by_item
 
     def add(
         self,
@@ -82,7 +84,7 @@ class RedisFrame(StorageFrame):
         return OperationResult(status=OperationStatus.success)
 
     def _get_frame_size(self, item: RedisItem) -> int:
-        if hasattr(item.Meta, "frame_size"):
+        if hasattr(item.Meta, "frame_size") and item.Meta.frame_size:
             queue_size = item.Meta.frame_size
         else:
             queue_size = self.DEFAULT_QUEUE_SIZE
