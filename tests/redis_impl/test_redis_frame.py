@@ -81,11 +81,11 @@ def test_get_frame_size(
 ) -> None:
     """ Получение максимального количества элементов в одном frame'е """
     expected_size: int = 33
-    test_item.Meta.frame_size = 33
+    test_item._frame_size = 33
     result_size: int = test_frame._get_frame_size(item=test_item)
     assert result_size == expected_size
     # Когда размер не определен, должно устанавливаться значение по умолчанию
-    del test_item.Meta.frame_size
+    del test_item._frame_size
     result_size: int = test_frame._get_frame_size(item=test_item)
     assert result_size == test_frame.DEFAULT_QUEUE_SIZE
 
@@ -217,6 +217,6 @@ def test_item_set_frame_size(
     test_item._db_instance = test_redis
     test_item.set_frame_size(NEW_FRAME_SIZE)
 
-    assert test_item.Meta.frame_size == NEW_FRAME_SIZE
+    assert test_item._frame_size == NEW_FRAME_SIZE
     db_frame_len: int = test_redis.llen(key)
     assert db_frame_len == NEW_FRAME_SIZE

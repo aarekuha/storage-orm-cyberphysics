@@ -35,6 +35,8 @@ class RedisItem(StorageItem):
     _params: Mapping[_Key, _Value]
     _db_instance: Union[redis.Redis, None] = None
     _on_init_ltrim: Union[Callable[[RedisItem,], None], None] = None
+    _frame_size: int = 0
+    _ttl: int | None = None
 
     class Meta:
         table: str = ""  # Pattern имени записи, например, "subsystem.{subsystem_id}.tag.{tag_id}"
@@ -70,15 +72,15 @@ class RedisItem(StorageItem):
 
     def set_ttl(self, new_ttl: int) -> None:
         """ Установка настойки времени жизни объекта 'на лету' """
-        setattr(self.Meta, "ttl", new_ttl)
+        setattr(self, "_ttl", new_ttl)
 
     def set_frame_size(self, new_frame_size: int) -> None:
         """ Установка настойки максимального размера frame'а 'на лету' """
-        old_frame_size: int = self.Meta.frame_size or 0
+        old_frame_size: int = self._frame_size or self.Meta.frame_size or 0
         if old_frame_size == new_frame_size:
             return
 
-        setattr(self.Meta, "frame_size", new_frame_size)
+        setattr(self, "_frame_size", new_frame_size)
 
         # Проверка необходимости подрезки frame'а
         if old_frame_size > new_frame_size:
@@ -90,7 +92,7 @@ class RedisItem(StorageItem):
         # Установка атрибутов из конструктора
         for config_key in ["ttl", "frame_size"]:
             if config_key in kwargs.keys():
-                setattr(self.Meta, config_key, kwargs[config_key])
+                setattr(self, f"_{config_key}", kwargs[config_key])
                 del kwargs[config_key]
         # Формирование полей модели из переданных дочернему классу аргументов
         [self.__dict__.__setitem__(key, value) for key, value in kwargs.items()]
@@ -368,7 +370,7 @@ class RedisItem(StorageItem):
             raise Exception("Redis database not connected...")
         try:
             for key, value in self.mapping.items():
-                expiration: Union[int, None] = self.Meta.ttl if hasattr(self.Meta, "ttl") else None
+                expiration: Union[int, None] = self._ttl if hasattr(self, "_ttl") else None
                 self._db_instance.set(name=key, value=value, ex=expiration)
             return OperationResult(status=OperationStatus.success)
         except Exception as exception:

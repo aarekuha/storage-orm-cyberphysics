@@ -84,8 +84,8 @@ class RedisFrame(StorageFrame):
         return OperationResult(status=OperationStatus.success)
 
     def _get_frame_size(self, item: RedisItem) -> int:
-        if hasattr(item.Meta, "frame_size") and item.Meta.frame_size:
-            queue_size = item.Meta.frame_size
+        if hasattr(item, "_frame_size") and item._frame_size:
+            queue_size = item._frame_size
         else:
             queue_size = self.DEFAULT_QUEUE_SIZE
         return queue_size
