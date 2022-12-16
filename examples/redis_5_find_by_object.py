@@ -1,3 +1,5 @@
+from typing import Union
+
 from storage_orm import StorageORM
 from storage_orm import RedisORM
 from storage_orm import RedisItem
@@ -27,7 +29,7 @@ print(result_of_operation)
 
 # Получение одной записи по фильтру
 another_item: ExampleItem = ExampleItem(subsystem_id=1, tag_id=15)
-item_by_object: ExampleItem | None = ExampleItem.get(_item=another_item)
+item_by_object: Union[ExampleItem, None] = ExampleItem.get(_item=another_item)
 print(f"{item_by_object=}")
 
 # Получение всех записей по фильтру

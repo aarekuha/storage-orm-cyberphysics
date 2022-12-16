@@ -1,6 +1,7 @@
 import pytest
 import copy
 import redis
+from typing import Union
 
 from storage_orm import RedisORM
 from storage_orm import RedisItem
@@ -21,9 +22,9 @@ def test_save_item(
     """ Проверка сохранения данных """
     RedisORM(client=test_redis).save(item=test_item)
     for key, value in test_item.mapping.items():
-        db_item: bytes | None = test_redis.get(key)
+        db_item: Union[bytes, None] = test_redis.get(key)
         # Подготовка проверяемого значение
-        expected_value: bytes | None = None
+        expected_value: Union[bytes, None] = None
         if isinstance(value, str):
             expected_value = value.encode()
         elif isinstance(value, bytes):
