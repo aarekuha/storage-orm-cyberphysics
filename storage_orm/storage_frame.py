@@ -1,9 +1,7 @@
 from abc import ABCMeta
 from abc import abstractmethod
 from typing import Any
-from typing import Union
 
-from .storage_item import StorageItem
 from .operation_result import OperationResult
 
 
@@ -11,25 +9,17 @@ class StorageFrame(metaclass=ABCMeta):
     _db_instance: Any
 
     @abstractmethod
-    def add(
-        cls,
-        item_or_items: Union[StorageItem, list[StorageItem]],
-    ) -> OperationResult:
+    def add(self, item_or_items) -> OperationResult:
         raise NotImplementedError
 
     @abstractmethod
-    def bulk_create(cls, items: list[StorageItem]) -> OperationResult:
+    def bulk_create(self, items) -> OperationResult:
         raise NotImplementedError
 
     @abstractmethod
-    def clear(cls, item: StorageItem) -> OperationResult:
+    def clear(self, item) -> OperationResult:
         raise NotImplementedError
 
     @abstractmethod
-    def get(
-        cls,
-        item: StorageItem,
-        start_item: int = 0,
-        end_item: int = -1,
-    ) -> list[StorageItem]:
+    def get(self, item, start_index: int = 0, end_index: int = -1) -> list:
         raise NotImplementedError

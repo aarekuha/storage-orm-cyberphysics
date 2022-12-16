@@ -1,6 +1,8 @@
 from __future__ import annotations
 import abc
 from typing import Any
+from typing import Type
+from typing import Union
 
 
 class StorageItem(metaclass=abc.ABCMeta):
@@ -18,8 +20,9 @@ class StorageItem(metaclass=abc.ABCMeta):
                     ttl = 3600  # sec, default None
     """
 
-    @abc.abstractclassmethod
-    def get(cls, _item: StorageItem = None, **kwargs) -> StorageItem:
+    @classmethod
+    @abc.abstractmethod
+    def get(cls, _item, **kwargs) -> Union[StorageItem, None]:
         """
             Получение одного объекта по выбранному фильтру
 
@@ -28,8 +31,9 @@ class StorageItem(metaclass=abc.ABCMeta):
         """
         raise NotImplementedError
 
-    @abc.abstractclassmethod
-    def filter(cls, _items: list[StorageItem] = None, **kwargs) -> list[StorageItem]:
+    @classmethod
+    @abc.abstractmethod
+    def filter(cls, _items, **kwargs) -> list:
         """
             Получение объектов по фильтру переданных аргументов, например:
 
@@ -38,8 +42,9 @@ class StorageItem(metaclass=abc.ABCMeta):
         """
         raise NotImplementedError
 
-    @abc.abstractclassmethod
-    def using(cls, db_instance: Any) -> StorageItem:
+    @classmethod
+    @abc.abstractmethod
+    def using(cls, db_instance) -> StorageItem:
         """
             Выполнение операций с БД путём direct-указания используемого
             подключения, например:

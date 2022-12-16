@@ -27,7 +27,7 @@ def test_filter_not_instance(test_item: RedisItem, test_input_dict: dict[str, st
     """ Осмысленное исключение, при отсутствии инициированного подключения к БД """
     with pytest.raises(Exception) as exception:
         any_dict_key: str = next(iter(test_input_dict))
-        test_item.filter(**{any_dict_key: test_input_dict[any_dict_key]})
+        test_item.filter(_items=None, **{any_dict_key: test_input_dict[any_dict_key]})
 
     assert "not connected" in str(exception.value)
 
@@ -240,7 +240,7 @@ def test_delete(test_item: RedisItem, test_redis: redis.Redis) -> None:
     assert db_keys_count == expected_keys_count
     # Удалить элемент и проверить, что база опустела
     test_item.using(db_instance=test_redis).delete()
-    db_keys_count: int = len(test_redis.keys())
+    db_keys_count = len(test_redis.keys())
     assert db_keys_count == 0
 
 

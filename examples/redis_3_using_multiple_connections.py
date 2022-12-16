@@ -29,8 +29,8 @@ redis_2: redis.Redis = redis.Redis(host="localhost", port=8379, db=2)
 example_item: ExampleItem = ExampleItem(subsystem_id=3, tag_id=15, date_time=1, any_value=11.)
 result_of_operation: OperationResult = example_item.using(db_instance=redis_1).save()
 # Redis #2
-example_item: ExampleItem = ExampleItem(subsystem_id=3, tag_id=15, date_time=2, any_value=22.)
-result_of_operation: OperationResult = example_item.using(db_instance=redis_2).save()
+example_item = ExampleItem(subsystem_id=3, tag_id=15, date_time=2, any_value=22.)
+result_of_operation = example_item.using(db_instance=redis_2).save()
 
 """ Получение записей """
 item_from_redis_1: Union[ExampleItem, None] = ExampleItem.using(db_instance=redis_1).get(subsystem_id=3, tag_id=15)

@@ -95,10 +95,10 @@ def test_bulk_delete(test_redis: redis.Redis, test_item: RedisItem) -> None:
     assert count_of_db_items == total_keys_expected
     # Удаление почти всех объектов (один оставить)
     RedisORM(client=test_redis).bulk_delete(items=items[:-1])
-    count_of_db_items: int = len(test_redis.keys())
-    count_of_item_fields: int = len(test_item._params)
+    count_of_db_items = len(test_redis.keys())
+    count_of_item_fields = len(test_item._params)
     # Должны остаться значения только одного объекта
-    total_keys_expected: int = count_of_item_fields
+    total_keys_expected = count_of_item_fields
     assert count_of_db_items == total_keys_expected
 
 

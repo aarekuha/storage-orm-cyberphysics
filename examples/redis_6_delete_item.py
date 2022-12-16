@@ -25,7 +25,7 @@ example_item: ExampleItem = ExampleItem(subsystem_id=3, tag_id=15, date_time=100
 result_of_operation: OperationResult = example_item.save()
 print(f"After save: {ExampleItem.get(subsystem_id=3, tag_id=15)=}")
 # Удаление единичной записи
-result_of_operation: OperationResult = example_item.delete()
+result_of_operation = example_item.delete()
 print(f"After delete: {ExampleItem.get(subsystem_id=3, tag_id=15)=}")
 
 # Создание нескольких записей
@@ -33,7 +33,7 @@ print(f"After delete: {ExampleItem.get(subsystem_id=3, tag_id=15)=}")
 example_items: list[ExampleItem] = []
 for i in range(10):
     subsystem_id: int = i % 10
-    example_item: ExampleItem = ExampleItem(
+    example_item = ExampleItem(
         subsystem_id=subsystem_id,
         another_key_value=i,
         tag_id=10 + (15 * random.randint(0, 1)),
@@ -41,10 +41,10 @@ for i in range(10):
         any_value=random.random() * 10,
     )
     example_items.append(example_item)
-result_of_operation: OperationResult = orm.bulk_create(items=example_items)
+result_of_operation = orm.bulk_create(items=example_items)
 print("After save:")
 for item in ExampleItem.filter(_items=example_items):
     print(f"{item=}")
 # Удаление нескольких записей
-result_of_operation: OperationResult = orm.bulk_delete(items=example_items)
+result_of_operation = orm.bulk_delete(items=example_items)
 print(f"After delete: {ExampleItem.filter(_items=example_items)=}")

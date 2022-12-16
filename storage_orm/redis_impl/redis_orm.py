@@ -1,5 +1,6 @@
 import redis
 import logging
+from typing import Union
 from typing import TypeVar
 
 from .redis_frame import RedisFrame
@@ -21,8 +22,8 @@ class RedisORM(StorageORM):
 
     def __init__(
         self,
-        client: redis.Redis = None,
-        host: str = None,
+        client: Union[redis.Redis, None] = None,
+        host: Union[str, None] = None,
         port: int = 6379,
         db: int = 0,
     ) -> None:

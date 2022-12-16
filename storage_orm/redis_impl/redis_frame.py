@@ -72,7 +72,7 @@ class RedisFrame(StorageFrame):
             if isinstance(item_or_items, RedisItem):
                 self._add_item(item=item_or_items)
             else:
-                [self._add_item(item) for item in item_or_items]
+                [self._add_item(item) for item in item_or_items]  # type: ignore
         except Exception as exception:
             self._pipe.reset()
             logging.exception(exception)

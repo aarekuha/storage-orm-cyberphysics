@@ -38,26 +38,26 @@ print("Групповая вставка данных во frame")
 example_items: list[ExampleItem] = []
 for i in range(0, 10):
     subsystem_id: int = i % 10
-    example_item: ExampleItem = ExampleItem(
+    example_item = ExampleItem(
         subsystem_id=1,
         tag_id=1,
         date_time=i*10,
         any_value=random.random() * 10,
     )
     example_items.append(example_item)
-result_of_operation: OperationResult = orm.frame.add(item_or_items=example_items)
+result_of_operation = orm.frame.add(item_or_items=example_items)
 print(result_of_operation)
 # Получение сохраненных во frame'е данных
-new_item: ExampleItem = ExampleItem(subsystem_id=1, tag_id=1)
+new_item = ExampleItem(subsystem_id=1, tag_id=1)
 print("Все элементы:")
-getted_items: list[ExampleItem] = orm.frame.get(item=new_item)
+getted_items = orm.frame.get(item=new_item)
 for idx, item in enumerate(getted_items):
     print(f"{idx}: {item=}")
 print("Самый старый объект:")
-getted_items: list[ExampleItem] = orm.frame.get(item=new_item, start_index=0, end_index=0)
+getted_items = orm.frame.get(item=new_item, start_index=0, end_index=0)
 for idx, item in enumerate(getted_items):
     print(f"{idx}: {item=}")
 print("Самый свежий объект:")
-getted_items: list[ExampleItem] = orm.frame.get(item=new_item, start_index=-1, end_index=-1)
+getted_items = orm.frame.get(item=new_item, start_index=-1, end_index=-1)
 for idx, item in enumerate(getted_items):
     print(f"{idx}: {item=}")

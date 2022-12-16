@@ -86,7 +86,7 @@ def test_get_frame_size(
     assert result_size == expected_size
     # Когда размер не определен, должно устанавливаться значение по умолчанию
     del test_item._frame_size
-    result_size: int = test_frame._get_frame_size(item=test_item)
+    result_size = test_frame._get_frame_size(item=test_item)
     assert result_size == test_frame.DEFAULT_QUEUE_SIZE
 
 
@@ -170,11 +170,11 @@ def test_get_first_last(test_frame: RedisFrame) -> None:
     assert len(result) == 1
     assert result[0] == test_item_oldest
     # Получение самого свежего объекта
-    result: list[RedisItem] = test_frame.get(item=item, start_index=-1, end_index=-1)
+    result = test_frame.get(item=item, start_index=-1, end_index=-1)
     assert len(result) == 1
     assert result[-1] == test_item_newest
     # При это количество записей во frame'е должно соответствовать лимиту
-    result: list[RedisItem] = test_frame.get(item=item)
+    result = test_frame.get(item=item)
     assert len(result) == COUNT_OF_ITEMS + 2
 
 
@@ -218,5 +218,5 @@ def test_item_set_frame_size(
     test_item.set_frame_size(NEW_FRAME_SIZE)
 
     assert test_item._frame_size == NEW_FRAME_SIZE
-    db_frame_len: int = test_redis.llen(key)
+    db_frame_len = test_redis.llen(key)
     assert db_frame_len == NEW_FRAME_SIZE

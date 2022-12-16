@@ -24,12 +24,12 @@ redis_orm.bulk_create([
 total_time: float = monotonic() - start_time
 print(f"StorageORM (write) -> Objects count: {COUNT}, total time: {total_time}")
 # Load test (direct)
-start_time: float = monotonic()
+start_time = monotonic()
 items: list[TestItem] = TestItem.filter(param1=1, param2=1)
-total_time: float = monotonic() - start_time
+total_time = monotonic() - start_time
 print(f"StorageORM (load, direct) -> Objects count: {COUNT}, total time: {total_time}")
 # Load test (use parameter __in)
-start_time: float = monotonic()
-items: list[TestItem] = TestItem.filter(param1__in=[1, 2, 3, 4, 5, 6, 7], param2=1)
-total_time: float = monotonic() - start_time
+start_time = monotonic()
+items = TestItem.filter(param1__in=[1, 2, 3, 4, 5, 6, 7], param2=1)
+total_time = monotonic() - start_time
 print(f"StorageORM (load, use __in = [1-7]) -> Objects count: {COUNT}, total time: {total_time}")

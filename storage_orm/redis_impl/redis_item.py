@@ -36,12 +36,12 @@ class RedisItem(StorageItem):
     _db_instance: Union[redis.Redis, None] = None
     _on_init_ltrim: Union[Callable[[RedisItem,], None], None] = None
     _frame_size: int = 0
-    _ttl: int | None = None
+    _ttl: Union[int, None] = None
 
     class Meta:
         table: str = ""  # Pattern имени записи, например, "subsystem.{subsystem_id}.tag.{tag_id}"
-        ttl: int | None = None  # Время жизни объекта в базе данных
-        frame_size: int | None = 100  # Максимальный размер frame'а
+        ttl: Union[int, None] = None  # Время жизни объекта в базе данных
+        frame_size: Union[int, None] = 100  # Максимальный размер frame'а
 
     def __init_subclass__(cls) -> None:
         cls._keys_positions = {
@@ -85,7 +85,7 @@ class RedisItem(StorageItem):
         # Проверка необходимости подрезки frame'а
         if old_frame_size > new_frame_size:
             # Подрезка фрейма в БД
-            if isinstance(self._on_init_ltrim, Callable):
+            if self._on_init_ltrim:
                 self._on_init_ltrim(self)
 
     def __init__(self, **kwargs) -> None:
@@ -95,7 +95,7 @@ class RedisItem(StorageItem):
                 setattr(self, f"_{config_key}", kwargs[config_key])
                 del kwargs[config_key]
         # Формирование полей модели из переданных дочернему классу аргументов
-        [self.__dict__.__setitem__(key, value) for key, value in kwargs.items()]
+        [self.__dict__.__setitem__(key, value) for key, value in kwargs.items()]  # type: ignore
         # Формирование изолированной среды с данными класса для дальнейшей работы с БД
         self._table = self.__class__.Meta.table.format(**kwargs)
         self._params = {
@@ -104,7 +104,7 @@ class RedisItem(StorageItem):
         }
         # Перегрузка методов для экземпляра класса
         self.using = self.instance_using  # type: ignore
-        if isinstance(self._on_init_ltrim, Callable):
+        if self._on_init_ltrim:
             self._on_init_ltrim(self)
 
     def __getattr__(self, attr_name: str):
@@ -131,7 +131,7 @@ class RedisItem(StorageItem):
         return True
 
     @classmethod
-    def get(cls: Type[T], _item: T = None, **kwargs) -> Union[T, None]:
+    def get(cls: Type[T], _item: Union[T, None] = None, **kwargs) -> Union[T, None]:
         """
             Получение одного объекта по выбранному фильтру
 
@@ -167,7 +167,7 @@ class RedisItem(StorageItem):
         return result
 
     @classmethod
-    def filter(cls: Type[T], _items: list[T] = None, **kwargs) -> list[T]:
+    def filter(cls: Type[T], _items: Union[list[T], None] = None, **kwargs) -> list[T]:
         """
             Получение объектов по фильтру переданных аргументов, например:
 
@@ -327,13 +327,13 @@ class RedisItem(StorageItem):
             f"{self._keys_positions=}, {self._params=})"
         )
 
-    def __eq__(self, other: Type[T]) -> bool:
+    def __eq__(self, other: Any) -> bool:
         if isinstance(other, self.__class__):
             return self._params == other._params and self._table == other._table
 
         return False
 
-    def instance_using(self: T, db_instance: redis.Redis = None) -> T:
+    def instance_using(self: T, db_instance: Union[redis.Redis, None] = None) -> T:
         """
             Выполнение операций с БД путём direct-указания используемого
             подключения, например:
@@ -348,7 +348,7 @@ class RedisItem(StorageItem):
         return copied_instance
 
     @classmethod
-    def using(cls: Type[T], db_instance: redis.Redis = None) -> T:
+    def using(cls: Type[T], db_instance: Union[redis.Redis, None] = None) -> T:
         """
             Выполнение операций с БД путём direct-указания используемого
             подключения, например:
