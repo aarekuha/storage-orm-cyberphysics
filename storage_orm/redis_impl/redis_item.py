@@ -71,11 +71,11 @@ class RedisItem(StorageItem):
         return result_kwargs
 
     def set_ttl(self, new_ttl: int) -> None:
-        """ Установка настойки времени жизни объекта 'на лету' """
+        """ Установка настройки времени жизни объекта 'на лету' """
         setattr(self, "_ttl", new_ttl)
 
     def set_frame_size(self, new_frame_size: int) -> None:
-        """ Установка настойки максимального размера frame'а 'на лету' """
+        """ Установка настройки максимального размера frame'а 'на лету' """
         old_frame_size: int = self._frame_size or self.Meta.frame_size or 0
         if old_frame_size == new_frame_size:
             return
@@ -90,7 +90,7 @@ class RedisItem(StorageItem):
 
     def __init__(self, **kwargs) -> None:
         # Установка атрибутов из конструктора
-        for config_key in ["ttl", "frame_size"]:
+        for config_key in ("ttl", "frame_size"):
             if config_key in kwargs.keys():
                 setattr(self, f"_{config_key}", kwargs[config_key])
                 del kwargs[config_key]
