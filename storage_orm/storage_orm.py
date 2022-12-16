@@ -1,8 +1,9 @@
-from abc import ABCMeta
+from abc import ABCMeta, abstractproperty
 from abc import abstractmethod
 from typing import Any
 
 from .storage_item import StorageItem
+from .storage_frame import StorageFrame
 from .operation_result import OperationResult
 
 
@@ -33,4 +34,8 @@ class StorageORM(metaclass=ABCMeta):
 
     @abstractmethod
     def delete(self, item: StorageItem) -> OperationResult:
+        raise NotImplementedError
+
+    @abstractproperty
+    def frame(self) -> StorageFrame:
         raise NotImplementedError
