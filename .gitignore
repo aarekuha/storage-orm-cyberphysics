@@ -4,3 +4,4 @@ storage_orm.egg-info/
 **/__pycache__/
 **/.pytest_cache/
 test.py
+.mypy_cache/
