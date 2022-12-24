@@ -3,6 +3,7 @@ import redis
 from pytest import MonkeyPatch
 
 from storage_orm import RedisItem
+from storage_orm import RedisFrame
 from storage_orm import MultipleGetParamsException
 from storage_orm import NotEnoughParamsException
 
@@ -258,3 +259,39 @@ def test_set_frame_size(test_item: RedisItem) -> None:
     new_frame_size: int = prev_frame_size * 2
     test_item.set_frame_size(new_frame_size)
     assert test_item._frame_size == new_frame_size
+
+
+def test_frame_trim_on_init(test_redis: redis.Redis, test_frame: RedisFrame) -> None:
+    """ Проверка на подрезку frame'а при инициализации класса """
+    INIT_COUNT: int = 100
+    CHANGED_COUNT: int = 22
+    TABLE: str = "param1.{param1}"
+
+    # Класс с установленным размером фрейма
+    class InitItem(RedisItem):
+        attr1: str
+
+        class Meta:
+            table = TABLE
+            frame_size = INIT_COUNT
+
+    # Тот же класс только с изменённым размером фрейма
+    class WithChangedFrameItem(RedisItem):
+        attr1: str
+
+        class Meta:
+            table = TABLE
+            frame_size = CHANGED_COUNT
+
+    # Заполнить frame стартовыми значениями
+    init_items: list[InitItem] = [InitItem(attr1=str(i), param1=1) for i in range(INIT_COUNT)]
+    test_frame.bulk_create(items=init_items)
+    # Убедиться, что все элементы были добавлены во frame
+    current_frame_key: str = test_frame._make_key(init_items[0])
+    frame_items_count: int = test_redis.llen(current_frame_key)
+    assert frame_items_count == INIT_COUNT
+    # Создать объект класса с измененным frame_size, во время инициализации должна произойти
+    #   "подрезка" frame'а по установленному Meta.frame_size
+    WithChangedFrameItem(param1=1)
+    frame_items_count = test_redis.llen(current_frame_key)
+    assert frame_items_count == CHANGED_COUNT

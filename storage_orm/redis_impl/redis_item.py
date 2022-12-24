@@ -74,14 +74,17 @@ class RedisItem(StorageItem):
         """ Установка настройки времени жизни объекта 'на лету' """
         setattr(self, "_ttl", new_ttl)
 
-    def set_frame_size(self, new_frame_size: int) -> None:
+    def set_frame_size(self, new_frame_size: int = 0) -> None:
         """ Установка настройки максимального размера frame'а 'на лету' """
         old_frame_size: int = self._frame_size or self.Meta.frame_size or 0
+        # При одинаковых значениях ничего не делать
         if old_frame_size == new_frame_size:
             return
-
+        # Если передан пустой аргумент, нужно установить значение по умолчанию
+        if not new_frame_size and self.Meta.frame_size:
+            new_frame_size = self.Meta.frame_size
+        # Аргумент, который используется для дальнейшей проверки и работы
         setattr(self, "_frame_size", new_frame_size)
-
         # Проверка необходимости подрезки frame'а
         if old_frame_size > new_frame_size:
             # Подрезка фрейма в БД
@@ -105,6 +108,7 @@ class RedisItem(StorageItem):
         # Перегрузка методов для экземпляра класса
         self.using = self.instance_using  # type: ignore
         if self._on_init_ltrim:
+            self.set_frame_size()
             self._on_init_ltrim(self)
 
     def __getattr__(self, attr_name: str):
