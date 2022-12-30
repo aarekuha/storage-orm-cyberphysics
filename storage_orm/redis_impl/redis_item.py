@@ -76,7 +76,8 @@ class RedisItem(StorageItem):
 
     def set_frame_size(self, new_frame_size: int = 0) -> None:
         """ Установка настройки максимального размера frame'а 'на лету' """
-        old_frame_size: int = self._frame_size or self.Meta.frame_size or 0
+        meta_frame_size: int | None = self.Meta.frame_size if hasattr(self.Meta, "frame_size") else None
+        old_frame_size: int = self._frame_size or meta_frame_size or 0
         # При одинаковых значениях ничего не делать
         if old_frame_size == new_frame_size:
             return
